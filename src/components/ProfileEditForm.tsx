@@ -71,13 +71,44 @@ const ProfileEditForm = ({ profileData, onSave, onCancel }: ProfileEditFormProps
         [fields[0]]: value
       });
     } else if (fields.length === 2) {
-      setProfile({
-        ...profile,
-        [fields[0]]: {
-          ...profile[fields[0] as keyof ProfileData],
-          [fields[1]]: value
-        }
-      });
+      // Fix for the TypeScript error - We need to handle each specific property correctly
+      const category = fields[0] as keyof ProfileData;
+      const property = fields[1];
+      
+      // Create a properly typed update based on the specific category
+      if (category === 'faith') {
+        setProfile({
+          ...profile,
+          faith: {
+            ...profile.faith,
+            [property]: value
+          }
+        });
+      } else if (category === 'personal') {
+        setProfile({
+          ...profile,
+          personal: {
+            ...profile.personal,
+            [property]: value
+          }
+        });
+      } else if (category === 'appearance') {
+        setProfile({
+          ...profile,
+          appearance: {
+            ...profile.appearance,
+            [property]: value
+          }
+        });
+      } else if (category === 'lifestyle') {
+        setProfile({
+          ...profile,
+          lifestyle: {
+            ...profile.lifestyle,
+            [property]: value
+          }
+        });
+      }
     }
   };
 
