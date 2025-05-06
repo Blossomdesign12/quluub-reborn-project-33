@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import SignupForm from "@/components/SignupForm";
+import { Heart, Shield } from "@/components/Icons";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);

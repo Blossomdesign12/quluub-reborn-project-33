@@ -1,6 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle, Lock } from "@/components/Icons";
 
 const Index = () => {
   return (
