@@ -30,6 +30,10 @@ const Navbar = () => {
                 <MessageCircle size={20} />
                 <span>Messages</span>
               </Link>
+              <Link to="/profile" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+                <User size={20} />
+                <span>Profile</span>
+              </Link>
               <Link to="/alerts" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Bell size={20} />
                 <span>Notifications</span>
