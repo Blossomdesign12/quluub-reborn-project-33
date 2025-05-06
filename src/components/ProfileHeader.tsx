@@ -1,8 +1,8 @@
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Heart, MessageCircle, Share } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import ProfileImage from "@/components/ProfileImage";
 
 interface ProfileHeaderProps {
   name: string;
@@ -25,10 +25,13 @@ const ProfileHeader = ({
         <div className="relative">
           <div className="h-40 md:h-60 w-full bg-gradient-to-b from-primary/20 to-primary/5 rounded-t-xl"></div>
           <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-            <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white">
-              <AvatarImage src={photoUrl} alt={name} />
-              <AvatarFallback>{name.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <ProfileImage 
+              src={photoUrl} 
+              alt={name} 
+              fallback={name.substring(0, 2).toUpperCase()}
+              size="xl"
+              className="border-4 border-white"
+            />
           </div>
         </div>
         

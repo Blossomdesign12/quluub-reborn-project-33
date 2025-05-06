@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface ProfilePhotosProps {
   photos: string[];
@@ -8,11 +9,18 @@ interface ProfilePhotosProps {
 }
 
 const ProfilePhotos = ({ photos, editable = false }: ProfilePhotosProps) => {
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
+  
   // Mock handler for photo click in edit mode
   const handlePhotoClick = (index: number) => {
     if (editable) {
       console.log(`Clicked photo at index ${index}`);
     }
+  };
+  
+  // Handle image loading error
+  const handleImageError = (index: number) => {
+    setImageErrors(prev => ({ ...prev, [index]: true }));
   };
 
   return (
@@ -31,11 +39,18 @@ const ProfilePhotos = ({ photos, editable = false }: ProfilePhotosProps) => {
               )}
               onClick={() => handlePhotoClick(index)}
             >
-              <img 
-                src={photo} 
-                alt={`Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-              />
+              {imageErrors[index] ? (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                  Image not available
+                </div>
+              ) : (
+                <img 
+                  src={photo || "/placeholder.svg"} 
+                  alt={`Photo ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={() => handleImageError(index)}
+                />
+              )}
             </div>
           ))}
           
