@@ -44,7 +44,7 @@ const MatchCard = ({
           <p className="text-sm opacity-80">{location}</p>
           {(compatibility || matchPercentage) && (
             <Badge className="mt-2 bg-primary/90 text-white hover:bg-primary">
-              {compatibility || matchPercentage}% Compatible
+              {compatibility || matchPercentage}% Tawafuq (Compatibility)
             </Badge>
           )}
           {matchDate && (

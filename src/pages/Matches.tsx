@@ -9,35 +9,39 @@ const Matches = () => {
   const matches = [
     {
       id: "1",
-      name: "Sarah",
+      name: "Fatima",
       age: 28,
       location: "New York, NY",
       photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchDate: "Today"
+      matchDate: "Today",
+      tags: ["Doctor", "Practicing", "Arab"]
     },
     {
       id: "2",
-      name: "Alex",
+      name: "Ahmad",
       age: 30,
       location: "Boston, MA",
       photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchDate: "Yesterday"
+      matchDate: "Yesterday",
+      tags: ["Engineer", "Very Religious", "Turkish"]
     },
     {
       id: "3",
-      name: "Jamie",
+      name: "Mariam",
       age: 26,
       location: "Chicago, IL",
       photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchDate: "3 days ago"
+      matchDate: "3 days ago",
+      tags: ["Teacher", "Hijabi", "Desi"]
     },
     {
       id: "4",
-      name: "Taylor",
+      name: "Tariq",
       age: 29,
       location: "Seattle, WA",
       photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchDate: "1 week ago"
+      matchDate: "1 week ago",
+      tags: ["Business", "Practicing", "African"]
     },
   ];
 
@@ -45,7 +49,7 @@ const Matches = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container py-6">
-        <h1 className="text-2xl font-bold mb-6">Your Matches</h1>
+        <h1 className="text-2xl font-bold mb-6">Your Potential Spouses</h1>
         
         {matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -57,6 +61,7 @@ const Matches = () => {
                 location={match.location}
                 photoUrl={match.photoUrl}
                 matchDate={match.matchDate}
+                tags={match.tags}
               />
             ))}
           </div>
@@ -64,7 +69,7 @@ const Matches = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-lg text-center text-muted-foreground">
-                You don't have any matches yet. Start browsing to find your perfect match!
+                SubhanAllah, you don't have any matches yet. Start browsing to find your halal match, insha'Allah!
               </p>
             </CardContent>
           </Card>

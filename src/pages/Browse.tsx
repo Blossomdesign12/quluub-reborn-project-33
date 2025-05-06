@@ -67,12 +67,12 @@ const Browse = () => {
       <main className="container py-6">
         {/* Search and filter section */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Discover</h1>
+          <h1 className="text-2xl font-bold">Discover Your Match</h1>
           
           <div className="flex gap-2">
             <div className="relative w-48 md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search by name, location..." />
+              <Input className="pl-9" placeholder="Search for potential spouses..." />
             </div>
             
             <Button
@@ -114,9 +114,10 @@ const Browse = () => {
                     <SelectContent>
                       <SelectItem value="any">Any ethnicity</SelectItem>
                       <SelectItem value="arab">Arab</SelectItem>
-                      <SelectItem value="south_asian">South Asian</SelectItem>
-                      <SelectItem value="southeast_asian">Southeast Asian</SelectItem>
+                      <SelectItem value="desi">Desi/South Asian</SelectItem>
                       <SelectItem value="african">African</SelectItem>
+                      <SelectItem value="turkish">Turkish</SelectItem>
+                      <SelectItem value="se_asian">Southeast Asian</SelectItem>
                       <SelectItem value="white">White/Caucasian</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
@@ -131,10 +132,10 @@ const Browse = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any level</SelectItem>
-                      <SelectItem value="very_practicing">Very practicing</SelectItem>
+                      <SelectItem value="very">Very religious</SelectItem>
                       <SelectItem value="practicing">Practicing</SelectItem>
-                      <SelectItem value="moderately">Moderately practicing</SelectItem>
-                      <SelectItem value="not_practicing">Not practicing but value Islam</SelectItem>
+                      <SelectItem value="moderate">Moderate</SelectItem>
+                      <SelectItem value="cultural">Cultural</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -151,22 +152,39 @@ const Browse = () => {
                       <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
                       <SelectItem value="masters">Master's Degree</SelectItem>
                       <SelectItem value="doctorate">Doctorate</SelectItem>
+                      <SelectItem value="islamic">Islamic Education</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Family Plans</h3>
+                  <h3 className="text-sm font-medium">Marriage Timeframe</h3>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Any plans" />
+                      <SelectValue placeholder="Any timeframe" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="any">Any plans</SelectItem>
-                      <SelectItem value="want_children">Want children</SelectItem>
-                      <SelectItem value="dont_want">Don't want children</SelectItem>
-                      <SelectItem value="have_children">Have and want more</SelectItem>
-                      <SelectItem value="have_dont_want">Have and don't want more</SelectItem>
+                      <SelectItem value="any">Any timeframe</SelectItem>
+                      <SelectItem value="ready">Ready now</SelectItem>
+                      <SelectItem value="soon">Within 6 months</SelectItem>
+                      <SelectItem value="year">Within a year</SelectItem>
+                      <SelectItem value="future">In the future</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Prayer Habits</h3>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Any practice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any practice</SelectItem>
+                      <SelectItem value="always">Always prays</SelectItem>
+                      <SelectItem value="usually">Usually prays</SelectItem>
+                      <SelectItem value="sometimes">Sometimes prays</SelectItem>
+                      <SelectItem value="rarely">Rarely prays</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -177,6 +195,14 @@ const Browse = () => {
                     <p className="text-xs text-muted-foreground">Show profiles within 50 miles</p>
                   </div>
                   <Switch id="local-matches" />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="photos-only" className="text-sm font-medium">With photos only</Label>
+                    <p className="text-xs text-muted-foreground">Only show profiles with photos</p>
+                  </div>
+                  <Switch id="photos-only" defaultChecked />
                 </div>
                 
                 <div className="col-span-1 md:col-span-3 flex justify-end gap-2">
@@ -203,9 +229,9 @@ const Browse = () => {
             />
           ) : (
             <div className="text-center p-8 border rounded-lg bg-white">
-              <h3 className="text-xl font-medium mb-2">No more profiles</h3>
+              <h3 className="text-xl font-medium mb-2">SubhanAllah! No more profiles</h3>
               <p className="text-muted-foreground">
-                We're finding more compatible matches for you. Check back soon!
+                We're finding more compatible matches for your halal journey. Check back soon, insha'Allah!
               </p>
             </div>
           )}
