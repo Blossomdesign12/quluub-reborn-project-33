@@ -1,11 +1,24 @@
 
+import React from "react";
 import Navbar from "@/components/Navbar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share, Edit } from "lucide-react";
+import { 
+  Heart, 
+  MessageCircle, 
+  Share, 
+  Edit,
+  User,
+  Church,
+  MapPin,
+  Shirt,
+  Leaf,
+  Star,
+  Link2
+} from "lucide-react";
 
 const Profile = () => {
   // In a real app, this would come from an API or context
@@ -33,6 +46,17 @@ const Profile = () => {
       occupation: "Medical Doctor",
       relocate: "Yes, within my country"
     },
+    appearance: {
+      height: "5'6\"",
+      build: "Average",
+      hijabStyle: "Traditional",
+    },
+    lifestyle: {
+      smoke: "Never",
+      drink: "Never",
+      diet: "Halal only",
+      exercise: "Regular",
+    },
     interests: ["Reading", "Hiking", "Cooking", "Charity Work", "Islamic Studies", "Travel"],
     photos: [
       "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
@@ -44,10 +68,24 @@ const Profile = () => {
     compatibilityScore: 87
   };
 
+  // Available categories for the profile sidebar
+  const categories = [
+    { id: "basic", label: "Basic Info", icon: <User className="h-5 w-5" /> },
+    { id: "deen", label: "Deen", icon: <Church className="h-5 w-5" /> },
+    { id: "location", label: "Location and Ethnicity", icon: <MapPin className="h-5 w-5" /> },
+    { id: "appearance", label: "Appearance and Co", icon: <Shirt className="h-5 w-5" /> },
+    { id: "lifestyle", label: "Lifestyle and Traits", icon: <Leaf className="h-5 w-5" /> },
+    { id: "interests", label: "Interests", icon: <Star className="h-5 w-5" /> },
+    { id: "matching", label: "Matching Details", icon: <Link2 className="h-5 w-5" /> }
+  ];
+
+  // Active category state
+  const [activeCategory, setActiveCategory] = React.useState("basic");
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="container max-w-4xl py-6">
+      <main className="container max-w-7xl py-6">
         {/* Profile header */}
         <Card className="border-0 shadow-none mb-6">
           <CardContent className="p-0">
@@ -102,46 +140,219 @@ const Profile = () => {
           </CardContent>
         </Card>
         
-        {/* Profile tabs */}
-        <Tabs defaultValue="about" className="space-y-6">
-          <TabsList className="bg-white border">
-            <TabsTrigger value="about">About</TabsTrigger>
-            <TabsTrigger value="faith">Faith</TabsTrigger>
-            <TabsTrigger value="personal">Personal</TabsTrigger>
-            <TabsTrigger value="photos">Photos</TabsTrigger>
-          </TabsList>
+        {/* Profile content with sidebar */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <div className="w-full md:w-64 bg-white rounded-lg shadow">
+            <div className="p-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-md transition-colors ${
+                    activeCategory === category.id
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "hover:bg-gray-100"
+                  }`}
+                  onClick={() => setActiveCategory(category.id)}
+                >
+                  {category.icon}
+                  <span>{category.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           
-          {/* About tab */}
-          <TabsContent value="about" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">About Me</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{profileData.bio}</p>
-              </CardContent>
-            </Card>
+          {/* Content area */}
+          <div className="flex-1">
+            {activeCategory === "basic" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">About Me</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">{profileData.bio}</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Occupation</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.occupation}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Education</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.education}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Marital Status</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.maritalStatus}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Has Children</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.hasChildren ? "Yes" : "No"}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Wants Children</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.wantsChildren}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Interests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {profileData.interests.map((interest, index) => (
-                    <Badge 
-                      key={index} 
-                      variant="secondary"
-                      className="text-sm"
-                    >
-                      {interest}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {activeCategory === "deen" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Faith & Religious Values</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Religious Practice</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.practice}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Pray Five Times</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.prayFiveTimes ? "Yes" : "No"}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Wear Hijab</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.hijab}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Religious Sect</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.sect}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Converted to Islam</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.converted ? "Yes" : "No"}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Faith is</span>
+                      <span className="text-sm text-muted-foreground">{profileData.faith.important}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
-            {!profileData.isOwnProfile && (
+            {activeCategory === "location" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Location & Ethnicity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Location</span>
+                      <span className="text-sm text-muted-foreground">{profileData.location}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Ethnicity</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.ethnicity}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Languages</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.languages.join(", ")}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Willing to Relocate</span>
+                      <span className="text-sm text-muted-foreground">{profileData.personal.relocate}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeCategory === "appearance" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Appearance</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Height</span>
+                      <span className="text-sm text-muted-foreground">{profileData.appearance.height}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Build</span>
+                      <span className="text-sm text-muted-foreground">{profileData.appearance.build}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Hijab Style</span>
+                      <span className="text-sm text-muted-foreground">{profileData.appearance.hijabStyle}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeCategory === "lifestyle" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Lifestyle & Traits</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Smoking</span>
+                      <span className="text-sm text-muted-foreground">{profileData.lifestyle.smoke}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Drinking</span>
+                      <span className="text-sm text-muted-foreground">{profileData.lifestyle.drink}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Diet</span>
+                      <span className="text-sm text-muted-foreground">{profileData.lifestyle.diet}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">Exercise</span>
+                      <span className="text-sm text-muted-foreground">{profileData.lifestyle.exercise}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeCategory === "interests" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Interests</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.interests.map((interest, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary"
+                        className="text-sm"
+                      >
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {activeCategory === "matching" && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Compatibility</CardTitle>
@@ -164,107 +375,18 @@ const Profile = () => {
                     <Badge className="bg-primary text-white">{profileData.compatibilityScore}%</Badge>
                   </div>
                 </CardContent>
+                
+                <CardContent className="pt-4 border-t">
+                  <h3 className="font-medium mb-2">Wali Information</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Aisha has provided wali contact information that will be shared after mutual interest is established.
+                  </p>
+                </CardContent>
               </Card>
             )}
-          </TabsContent>
-          
-          {/* Faith tab */}
-          <TabsContent value="faith" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Faith & Religious Values</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Religious Practice</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.practice}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Pray Five Times</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.prayFiveTimes ? "Yes" : "No"}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Wear Hijab</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.hijab}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Religious Sect</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.sect}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Converted to Islam</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.converted ? "Yes" : "No"}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Faith is</span>
-                    <span className="text-sm text-muted-foreground">{profileData.faith.important}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Personal tab */}
-          <TabsContent value="personal" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Personal Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Ethnicity</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.ethnicity}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Languages</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.languages.join(", ")}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Marital Status</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.maritalStatus}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Has Children</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.hasChildren ? "Yes" : "No"}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Wants Children</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.wantsChildren}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Education</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.education}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Occupation</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.occupation}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Willing to Relocate</span>
-                    <span className="text-sm text-muted-foreground">{profileData.personal.relocate}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Photos tab */}
-          <TabsContent value="photos">
-            <Card>
+            
+            {/* Photos section - always visible at the bottom */}
+            <Card className="mt-6">
               <CardHeader>
                 <CardTitle className="text-lg">Photos</CardTitle>
               </CardHeader>
@@ -282,18 +404,11 @@ const Profile = () => {
                       />
                     </div>
                   ))}
-                  {profileData.isOwnProfile && profileData.photos.length < 6 && (
-                    <div 
-                      className="aspect-square rounded-md border-2 border-dashed border-muted flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
-                    >
-                      <span className="text-2xl text-muted-foreground">+</span>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
