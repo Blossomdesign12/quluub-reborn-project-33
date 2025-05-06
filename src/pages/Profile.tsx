@@ -18,7 +18,8 @@ import {
   Shirt,
   Leaf,
   Star,
-  Link2
+  Link2,
+  Briefcase
 } from "lucide-react";
 
 const Profile = () => {
@@ -29,28 +30,35 @@ const Profile = () => {
     location: "New York, NY",
     photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
     bio: "Assalamualaikum! Medical resident passionate about healthcare and community service. I enjoy reading, hiking, and exploring new cuisines in my free time. Looking for someone who values family and faith.",
+    summary: "Medical professional seeking compatible partner who values faith and family",
     faith: {
       practice: "Practicing",
       prayFiveTimes: true,
       hijab: "Always",
       sect: "Sunni",
       converted: false,
-      important: "Very important"
+      important: "Very important",
+      patternOfSalaah: "All five daily"
     },
     personal: {
       ethnicity: "Arab",
+      nationality: "Egyptian",
+      country: "United States",
       languages: ["English", "Arabic"],
       maritalStatus: "Never Married",
       hasChildren: false,
       wantsChildren: "Yes",
       education: "Doctorate",
       occupation: "Medical Doctor",
-      relocate: "Yes, within my country"
+      relocate: "Yes, within my country",
+      workEducation: "Completed medical school at NYU. Currently in residency at Mount Sinai Hospital specializing in pediatrics.",
+      genotype: "AA"
     },
     appearance: {
       height: "5'6\"",
       build: "Average",
       hijabStyle: "Traditional",
+      appearance: "Medium height with olive complexion and brown eyes"
     },
     lifestyle: {
       smoke: "Never",
@@ -65,6 +73,8 @@ const Profile = () => {
       "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
       "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400"
     ],
+    lastSeen: new Date(),
+    favorites: [],
     isOwnProfile: true,
     compatibilityScore: 87
   });
@@ -74,7 +84,8 @@ const Profile = () => {
     { id: "basic", label: "Basic Info", icon: <User className="h-5 w-5" /> },
     { id: "deen", label: "Deen", icon: <Church className="h-5 w-5" /> },
     { id: "location", label: "Location and Ethnicity", icon: <MapPin className="h-5 w-5" /> },
-    { id: "appearance", label: "Appearance and Co", icon: <Shirt className="h-5 w-5" /> },
+    { id: "appearance", label: "Appearance", icon: <Shirt className="h-5 w-5" /> },
+    { id: "work", label: "Work and Education", icon: <Briefcase className="h-5 w-5" /> },
     { id: "lifestyle", label: "Lifestyle and Traits", icon: <Leaf className="h-5 w-5" /> },
     { id: "interests", label: "Interests", icon: <Star className="h-5 w-5" /> },
     { id: "matching", label: "Matching Details", icon: <Link2 className="h-5 w-5" /> }
@@ -88,6 +99,18 @@ const Profile = () => {
   const handleSaveProfile = (updatedProfile) => {
     setProfileData(updatedProfile);
     setIsEditing(false);
+  };
+
+  // Format date for display
+  const formatDate = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -120,6 +143,11 @@ const Profile = () => {
                 <div>
                   <h1 className="text-2xl font-bold">{profileData.name}, {profileData.age}</h1>
                   <p className="text-muted-foreground">{profileData.location}</p>
+                  {profileData.lastSeen && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Last seen: {formatDate(profileData.lastSeen)}
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex mt-4 md:mt-0 space-x-2">
@@ -196,19 +224,16 @@ const Profile = () => {
                     <CardTitle className="text-lg">About Me</CardTitle>
                   </CardHeader>
                   <CardContent>
+                    {profileData.summary && (
+                      <div className="mb-4">
+                        <h4 className="font-medium text-sm mb-1">Summary</h4>
+                        <p className="text-muted-foreground">{profileData.summary}</p>
+                      </div>
+                    )}
+                    
                     <p className="text-muted-foreground">{profileData.bio}</p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Occupation</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.occupation}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Education</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.education}</span>
-                      </div>
-                      
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Marital Status</span>
                         <span className="text-sm text-muted-foreground">{profileData.personal.maritalStatus}</span>
@@ -222,6 +247,11 @@ const Profile = () => {
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Wants Children</span>
                         <span className="text-sm text-muted-foreground">{profileData.personal.wantsChildren}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Genotype</span>
+                        <span className="text-sm text-muted-foreground">{profileData.personal.genotype || "Not specified"}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -243,6 +273,11 @@ const Profile = () => {
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Pray Five Times</span>
                         <span className="text-sm text-muted-foreground">{profileData.faith.prayFiveTimes ? "Yes" : "No"}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Pattern of Salaah</span>
+                        <span className="text-sm text-muted-foreground">{profileData.faith.patternOfSalaah || "Not specified"}</span>
                       </div>
                       
                       <div className="flex justify-between">
@@ -277,13 +312,23 @@ const Profile = () => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium">Location</span>
+                        <span className="text-sm font-medium">Current Location</span>
                         <span className="text-sm text-muted-foreground">{profileData.location}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Country of Residence</span>
+                        <span className="text-sm text-muted-foreground">{profileData.personal.country || "Not specified"}</span>
                       </div>
                       
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Ethnicity</span>
                         <span className="text-sm text-muted-foreground">{profileData.personal.ethnicity}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Nationality</span>
+                        <span className="text-sm text-muted-foreground">{profileData.personal.nationality || "Not specified"}</span>
                       </div>
                       
                       <div className="flex justify-between">
@@ -322,6 +367,41 @@ const Profile = () => {
                         <span className="text-sm text-muted-foreground">{profileData.appearance.hijabStyle}</span>
                       </div>
                     </div>
+                    
+                    {profileData.appearance.appearance && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-2">Physical Appearance</h4>
+                        <p className="text-sm text-muted-foreground">{profileData.appearance.appearance}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+              
+              {activeCategory === "work" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Work & Education</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Occupation</span>
+                        <span className="text-sm text-muted-foreground">{profileData.personal.occupation}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Education</span>
+                        <span className="text-sm text-muted-foreground">{profileData.personal.education}</span>
+                      </div>
+                    </div>
+                    
+                    {profileData.personal.workEducation && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-2">Work & Education Details</h4>
+                        <p className="text-sm text-muted-foreground">{profileData.personal.workEducation}</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
