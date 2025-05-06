@@ -10,6 +10,11 @@ import Profile from "./pages/Profile";
 import Browse from "./pages/Browse";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
+import Search from "./pages/Search";
+import Matches from "./pages/Matches";
+import Settings from "./pages/Settings";
+import Alerts from "./pages/Alerts";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +30,11 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/browse" element={<Browse />} />
           <Route path="/messages" element={<Messages />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/alerts" element={<Alerts />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

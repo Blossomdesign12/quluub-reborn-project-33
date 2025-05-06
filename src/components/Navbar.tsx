@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Search, User } from "lucide-react";
+import { Heart, MessageCircle, Search, User, Bell, Grid3x3 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
@@ -18,9 +18,9 @@ const Navbar = () => {
         {isLoggedIn ? (
           <div className="flex items-center space-x-4">
             <nav className="hidden md:flex items-center space-x-4">
-              <Link to="/browse" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+              <Link to="/search" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Search size={20} />
-                <span>Browse</span>
+                <span>Search</span>
               </Link>
               <Link to="/matches" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Heart size={20} />
@@ -29,6 +29,14 @@ const Navbar = () => {
               <Link to="/messages" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <MessageCircle size={20} />
                 <span>Messages</span>
+              </Link>
+              <Link to="/alerts" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+                <Bell size={20} />
+                <span>Alerts</span>
+              </Link>
+              <Link to="/dashboard" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+                <Grid3x3 size={20} />
+                <span>Dashboard</span>
               </Link>
             </nav>
             
