@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Search, User, Bell, Grid3x3 } from "lucide-react";
+import { Heart, MessageCircle, Search, User, Bell, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Navbar = () => {
@@ -18,9 +18,9 @@ const Navbar = () => {
         {isLoggedIn ? (
           <div className="flex items-center space-x-4">
             <nav className="hidden md:flex items-center space-x-4">
-              <Link to="/search" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+              <Link to="/browse" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Search size={20} />
-                <span>Search</span>
+                <span>Discover</span>
               </Link>
               <Link to="/matches" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Heart size={20} />
@@ -32,11 +32,11 @@ const Navbar = () => {
               </Link>
               <Link to="/alerts" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
                 <Bell size={20} />
-                <span>Alerts</span>
+                <span>Notifications</span>
               </Link>
-              <Link to="/dashboard" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <Grid3x3 size={20} />
-                <span>Dashboard</span>
+              <Link to="/settings" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
+                <Settings size={20} />
+                <span>Settings</span>
               </Link>
             </nav>
             
@@ -49,12 +49,16 @@ const Navbar = () => {
           </div>
         ) : (
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              Login
-            </Button>
-            <Button size="sm">
-              Sign Up
-            </Button>
+            <Link to="/auth">
+              <Button variant="outline" size="sm">
+                Login
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm">
+                Sign Up
+              </Button>
+            </Link>
           </div>
         )}
       </div>

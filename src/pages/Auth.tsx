@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import SignupForm from "@/components/SignupForm";
-import { Heart, Shield } from "@/components/Icons";
+import { Heart, Shield, MessageCircle } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -23,9 +23,9 @@ const Auth = () => {
     navigate("/browse");
   };
   
-  const handleSignup = (name: string, email: string, password: string) => {
+  const handleSignup = (name: string, email: string, password: string, gender: string) => {
     // In a real app, this would create a new user account
-    console.log("Signing up with:", name, email, password);
+    console.log("Signing up with:", name, email, password, gender);
     
     toast({
       title: "Account created successfully",
@@ -43,7 +43,7 @@ const Auth = () => {
           <div className="h-full flex flex-col justify-center">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">Quluub</h1>
             <p className="text-lg md:text-xl mb-8">
-              Find meaningful connections with people who share your values and interests.
+              Find your blessed match with faith at the center of your search.
             </p>
             <div className="space-y-4">
               <div className="flex items-start">
@@ -51,8 +51,8 @@ const Auth = () => {
                   <Heart className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Quality Matches</h3>
-                  <p className="text-sm opacity-80">Our algorithm focuses on compatibility, not just appearances.</p>
+                  <h3 className="font-medium">Islamic Values</h3>
+                  <p className="text-sm opacity-80">Our matching focuses on compatibility in faith and values.</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -60,8 +60,17 @@ const Auth = () => {
                   <Shield className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Safe Community</h3>
-                  <p className="text-sm opacity-80">We prioritize your privacy and security above all else.</p>
+                  <h3 className="font-medium">Private & Secure</h3>
+                  <p className="text-sm opacity-80">Your privacy and security are our top priorities.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="rounded-full bg-white/20 p-2 mr-4">
+                  <MessageCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Guided Communication</h3>
+                  <p className="text-sm opacity-80">Our tools help you have meaningful conversations.</p>
                 </div>
               </div>
             </div>

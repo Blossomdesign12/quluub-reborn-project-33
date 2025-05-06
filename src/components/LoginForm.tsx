@@ -38,7 +38,7 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
   };
   
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto shadow-none border-0">
       <CardHeader>
         <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
         <CardDescription className="text-center">
