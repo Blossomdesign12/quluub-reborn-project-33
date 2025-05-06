@@ -8,9 +8,11 @@ interface MatchCardProps {
   name: string;
   age: number;
   location: string;
-  bio: string;
+  bio?: string;
   photoUrl: string;
   compatibility?: number;
+  matchPercentage?: number;
+  matchDate?: string;
   tags?: string[];
   onLike?: () => void;
   onPass?: () => void;
@@ -20,9 +22,11 @@ const MatchCard = ({
   name,
   age,
   location,
-  bio,
+  bio = "",
   photoUrl,
   compatibility,
+  matchPercentage,
+  matchDate,
   tags = [],
   onLike,
   onPass
@@ -38,15 +42,18 @@ const MatchCard = ({
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
           <h3 className="text-xl font-bold">{name}, {age}</h3>
           <p className="text-sm opacity-80">{location}</p>
-          {compatibility && (
+          {(compatibility || matchPercentage) && (
             <Badge className="mt-2 bg-primary/90 text-white hover:bg-primary">
-              {compatibility}% Compatible
+              {compatibility || matchPercentage}% Compatible
             </Badge>
+          )}
+          {matchDate && (
+            <p className="text-xs mt-1 opacity-75">Matched {matchDate}</p>
           )}
         </div>
       </div>
       <CardContent className="p-4">
-        <p className="text-sm text-muted-foreground">{bio}</p>
+        {bio && <p className="text-sm text-muted-foreground">{bio}</p>}
         
         {tags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
