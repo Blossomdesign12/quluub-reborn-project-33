@@ -28,7 +28,9 @@ const Search = () => {
       location: "New York, NY",
       photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 85,
-      tags: ["Medical Professional", "Practicing", "Ready for Marriage"]
+      tags: ["Medical Professional", "Practicing", "Ready for Marriage"],
+      connectionSent: false,
+      connectionAccepted: false
     },
     {
       id: "2",
@@ -37,7 +39,9 @@ const Search = () => {
       location: "Chicago, IL",
       photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 78,
-      tags: ["Engineer", "Practicing", "Family-oriented"]
+      tags: ["Engineer", "Practicing", "Family-oriented"],
+      connectionSent: true,
+      connectionAccepted: true
     },
     {
       id: "3",
@@ -46,7 +50,9 @@ const Search = () => {
       location: "Houston, TX",
       photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 92,
-      tags: ["Teacher", "Very Religious", "Arabic Speaker"]
+      tags: ["Teacher", "Very Religious", "Arabic Speaker"],
+      connectionSent: true,
+      connectionAccepted: false
     },
     {
       id: "4",
@@ -55,7 +61,9 @@ const Search = () => {
       location: "Seattle, WA",
       photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 70,
-      tags: ["Business Owner", "Moderate", "Loves Travel"]
+      tags: ["Business Owner", "Moderate", "Loves Travel"],
+      connectionSent: false,
+      connectionAccepted: false
     },
     {
       id: "5",
@@ -64,7 +72,9 @@ const Search = () => {
       location: "Denver, CO",
       photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 81,
-      tags: ["Healthcare", "Hijabi", "Family First"]
+      tags: ["Healthcare", "Hijabi", "Family First"],
+      connectionSent: false,
+      connectionAccepted: false
     },
     {
       id: "6",
@@ -73,7 +83,9 @@ const Search = () => {
       location: "Austin, TX",
       photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
       matchPercentage: 88,
-      tags: ["Tech Professional", "Practicing", "Arab"]
+      tags: ["Tech Professional", "Practicing", "Arab"],
+      connectionSent: false,
+      connectionAccepted: false
     },
   ];
 
