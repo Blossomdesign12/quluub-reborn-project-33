@@ -1,10 +1,26 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { FeedbackFloater } from "@/components/FeedbackFloater";
+import { Heart, MessageCircle, User, Bell, ChevronRight, Users, Calendar, Star } from "lucide-react";
 
 const Dashboard = () => {
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    // Show the feedback floater after a delay
+    // In a real app, this would check if the user has already provided feedback
+    const timer = setTimeout(() => {
+      setShowFeedback(true);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -54,6 +70,10 @@ const Dashboard = () => {
                     </span>
                   </div>
                 </div>
+                
+                <Button variant="outline" size="sm" className="mt-4">
+                  Complete Profile
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -85,6 +105,10 @@ const Dashboard = () => {
                   <span>Messages Received</span>
                   <span className="font-medium">28</span>
                 </div>
+                
+                <Button variant="outline" size="sm" className="w-full">
+                  View Detailed Stats
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -139,10 +163,92 @@ const Dashboard = () => {
                     <p className="text-xs text-muted-foreground">3 days ago</p>
                   </div>
                 </div>
+                
+                <Button variant="outline" size="sm" className="w-full">
+                  See All Visitors
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+        
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <Card className="hover:border-primary/50 cursor-pointer transition-all">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-3 rounded-full">
+                <Users size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium">Discover</h3>
+                <p className="text-sm text-muted-foreground">Find new matches</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:border-primary/50 cursor-pointer transition-all">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-3 rounded-full">
+                <Heart size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium">Matches</h3>
+                <p className="text-sm text-muted-foreground">View your matches</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:border-primary/50 cursor-pointer transition-all">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-3 rounded-full">
+                <MessageCircle size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium">Messages</h3>
+                <p className="text-sm text-muted-foreground">2 unread messages</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:border-primary/50 cursor-pointer transition-all">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="bg-primary/10 text-primary p-3 rounded-full">
+                <User size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium">Profile</h3>
+                <p className="text-sm text-muted-foreground">Edit your profile</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Premium promotion */}
+        <Card className="mt-6 bg-gradient-to-r from-primary/20 to-secondary/20 border-0">
+          <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between">
+            <div className="flex items-center gap-4 mb-4 md:mb-0">
+              <div className="bg-white p-3 rounded-full">
+                <Star className="h-6 w-6 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Upgrade to Premium</h3>
+                <p className="text-sm">Get unlimited matches, advanced search filters & video calls</p>
+              </div>
+            </div>
+            <Button>
+              Upgrade Now
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Feedback floater */}
+        {showFeedback && (
+          <FeedbackFloater onClose={() => setShowFeedback(false)} />
+        )}
       </div>
     </div>
   );

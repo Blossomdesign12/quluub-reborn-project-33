@@ -15,6 +15,7 @@ import Search from "./pages/Search";
 import Matches from "./pages/Matches";
 import Settings from "./pages/Settings";
 import Alerts from "./pages/Alerts";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/matches" element={<Matches />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
