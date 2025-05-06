@@ -16,7 +16,9 @@ import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
 
 const Search = () => {
-  const [ageRange, setAgeRange] = useState([21, 35]);
+  const [ageRange, setAgeRange] = useState([18, 60]);
+  const [heightRange, setHeightRange] = useState([150, 200]); // In cm
+  const [weightRange, setWeightRange] = useState([30, 125]); // In kg
   const [location, setLocation] = useState("anywhere");
   
   // Mock search results - in a real app, would be filtered based on criteria
@@ -104,7 +106,7 @@ const Search = () => {
                   <label className="text-sm font-medium mb-2 block">Age Range</label>
                   <div className="mb-2">
                     <Slider 
-                      defaultValue={[21, 35]} 
+                      value={ageRange}
                       min={18} 
                       max={60} 
                       step={1}
@@ -114,6 +116,40 @@ const Search = () => {
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>{ageRange[0]}</span>
                     <span>{ageRange[1]}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Height range</label>
+                  <div className="mb-2">
+                    <Slider 
+                      value={heightRange} 
+                      min={120} 
+                      max={215} 
+                      step={1}
+                      onValueChange={(value) => setHeightRange(value as number[])}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{Math.floor(heightRange[0]/30.48)}'{Math.round((heightRange[0]/2.54)%12)}"</span>
+                    <span>{Math.floor(heightRange[1]/30.48)}'{Math.round((heightRange[1]/2.54)%12)}"</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Weight range</label>
+                  <div className="mb-2">
+                    <Slider 
+                      value={weightRange} 
+                      min={30} 
+                      max={125} 
+                      step={1}
+                      onValueChange={(value) => setWeightRange(value as number[])}
+                    />
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>{weightRange[0]}kg</span>
+                    <span>{weightRange[1]}kg</span>
                   </div>
                 </div>
                 
@@ -133,58 +169,42 @@ const Search = () => {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Religious Practice</label>
+                  <label className="text-sm font-medium mb-2 block">Nationality</label>
                   <Select defaultValue="any">
                     <SelectTrigger>
-                      <SelectValue placeholder="Any level" />
+                      <SelectValue placeholder="Any nationality" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="any">Any level</SelectItem>
-                      <SelectItem value="very">Very religious</SelectItem>
-                      <SelectItem value="practicing">Practicing</SelectItem>
-                      <SelectItem value="moderate">Moderate</SelectItem>
-                      <SelectItem value="cultural">Cultural</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Ethnicity</label>
-                  <Select defaultValue="any">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Any ethnicity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any">Any ethnicity</SelectItem>
-                      <SelectItem value="arab">Arab</SelectItem>
-                      <SelectItem value="desi">Desi/South Asian</SelectItem>
-                      <SelectItem value="african">African</SelectItem>
-                      <SelectItem value="turkish">Turkish</SelectItem>
-                      <SelectItem value="se_asian">Southeast Asian</SelectItem>
-                      <SelectItem value="white">White/Caucasian</SelectItem>
+                      <SelectItem value="any">Any nationality</SelectItem>
+                      <SelectItem value="saudi">Saudi</SelectItem>
+                      <SelectItem value="egyptian">Egyptian</SelectItem>
+                      <SelectItem value="jordanian">Jordanian</SelectItem>
+                      <SelectItem value="pakistani">Pakistani</SelectItem>
+                      <SelectItem value="indian">Indian</SelectItem>
+                      <SelectItem value="malaysian">Malaysian</SelectItem>
+                      <SelectItem value="indonesian">Indonesian</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Family Plans</label>
-                  <div className="flex flex-wrap gap-2">
-                    {["Want children", "Open to children", "Has children", "Don't want children"].map((plan) => (
-                      <Button 
-                        key={plan} 
-                        variant="outline" 
-                        size="sm" 
-                        className="rounded-full"
-                      >
-                        {plan}
-                      </Button>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium mb-2 block">Marital Status</label>
+                  <Select defaultValue="any">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Any status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="any">Any status</SelectItem>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="divorced">Divorced</SelectItem>
+                      <SelectItem value="widowed">Widowed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Prayer Habits</label>
+                  <label className="text-sm font-medium mb-2 block">Pattern of Salaah</label>
                   <Select defaultValue="any">
                     <SelectTrigger>
                       <SelectValue placeholder="Any practice" />

@@ -51,8 +51,10 @@ const Browse = () => {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [profiles, setProfiles] = useState(initialProfiles);
-  const [ageRange, setAgeRange] = useState([25, 35]);
-  const [isPro, setIsPro] = useState(false); // In real app, would come from user subscription info
+  const [ageRange, setAgeRange] = useState([18, 60]);
+  const [heightRange, setHeightRange] = useState([150, 200]); // In cm
+  const [weightRange, setWeightRange] = useState([30, 125]); // In kg
+  const [isPro, setIsPro] = useState(false);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const { toast } = useToast();
 
@@ -115,7 +117,6 @@ const Browse = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <main className="container py-6">
-        {/* Search and filter section - always visible now */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Discover Your Match</h1>
           
@@ -127,101 +128,111 @@ const Browse = () => {
           </div>
         </div>
         
-        {/* Filters panel - always visible now */}
+        {/* Updated Filter Panel */}
         <Card className="mb-6">
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Age Range</h3>
-                <Slider 
-                  defaultValue={[25, 35]} 
-                  min={18} 
-                  max={60} 
-                  step={1}
-                  onValueChange={(value) => setAgeRange(value as number[])}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{ageRange[0]}</span>
-                  <span>{ageRange[1]}</span>
-                </div>
-              </div>
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold mb-2">
+                Set your preferences and we will find her in shaa Allaah
+              </h2>
               
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Ethnicity</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any ethnicity" />
+                    <SelectValue placeholder="Nationality (as on passport)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any ethnicity</SelectItem>
-                    <SelectItem value="arab">Arab</SelectItem>
-                    <SelectItem value="desi">Desi/South Asian</SelectItem>
-                    <SelectItem value="african">African</SelectItem>
-                    <SelectItem value="turkish">Turkish</SelectItem>
-                    <SelectItem value="se_asian">Southeast Asian</SelectItem>
-                    <SelectItem value="white">White/Caucasian</SelectItem>
+                    <SelectItem value="any">Any nationality</SelectItem>
+                    <SelectItem value="saudi">Saudi</SelectItem>
+                    <SelectItem value="egyptian">Egyptian</SelectItem>
+                    <SelectItem value="jordanian">Jordanian</SelectItem>
+                    <SelectItem value="pakistani">Pakistani</SelectItem>
+                    <SelectItem value="indian">Indian</SelectItem>
+                    <SelectItem value="malaysian">Malaysian</SelectItem>
+                    <SelectItem value="indonesian">Indonesian</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Religious Practice</h3>
+
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any level" />
+                    <SelectValue placeholder="Country of residence" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any level</SelectItem>
-                    <SelectItem value="very">Very religious</SelectItem>
-                    <SelectItem value="practicing">Practicing</SelectItem>
-                    <SelectItem value="moderate">Moderate</SelectItem>
-                    <SelectItem value="cultural">Cultural</SelectItem>
+                    <SelectItem value="any">Any country</SelectItem>
+                    <SelectItem value="saudi">Saudi Arabia</SelectItem>
+                    <SelectItem value="egypt">Egypt</SelectItem>
+                    <SelectItem value="jordan">Jordan</SelectItem>
+                    <SelectItem value="pakistan">Pakistan</SelectItem>
+                    <SelectItem value="india">India</SelectItem>
+                    <SelectItem value="malaysia">Malaysia</SelectItem>
+                    <SelectItem value="indonesia">Indonesia</SelectItem>
+                    <SelectItem value="usa">USA</SelectItem>
+                    <SelectItem value="uk">UK</SelectItem>
+                    <SelectItem value="canada">Canada</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Build" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any</SelectItem>
+                    <SelectItem value="athletic">Athletic</SelectItem>
+                    <SelectItem value="slim">Slim</SelectItem>
+                    <SelectItem value="average">Average</SelectItem>
+                    <SelectItem value="curvy">Curvy</SelectItem>
+                    <SelectItem value="plus">Plus size</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Genotype" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any</SelectItem>
+                    <SelectItem value="aa">AA</SelectItem>
+                    <SelectItem value="as">AS</SelectItem>
+                    <SelectItem value="ss">SS</SelectItem>
+                    <SelectItem value="ac">AC</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Education</h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any education" />
+                    <SelectValue placeholder="Facial appearance" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any education</SelectItem>
-                    <SelectItem value="high_school">High School</SelectItem>
-                    <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
-                    <SelectItem value="masters">Master's Degree</SelectItem>
-                    <SelectItem value="doctorate">Doctorate</SelectItem>
-                    <SelectItem value="islamic">Islamic Education</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
+                    <SelectItem value="very_attractive">Very attractive</SelectItem>
+                    <SelectItem value="attractive">Attractive</SelectItem>
+                    <SelectItem value="average">Average</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Marriage Timeframe</h3>
+
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any timeframe" />
+                    <SelectValue placeholder="Marital Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any timeframe</SelectItem>
-                    <SelectItem value="ready">Ready now</SelectItem>
-                    <SelectItem value="soon">Within 6 months</SelectItem>
-                    <SelectItem value="year">Within a year</SelectItem>
-                    <SelectItem value="future">In the future</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
+                    <SelectItem value="single">Single</SelectItem>
+                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="widowed">Widowed</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Prayer Habits</h3>
+
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Any practice" />
+                    <SelectValue placeholder="Pattern of Salaah" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="any">Any practice</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
                     <SelectItem value="always">Always prays</SelectItem>
                     <SelectItem value="usually">Usually prays</SelectItem>
                     <SelectItem value="sometimes">Sometimes prays</SelectItem>
@@ -229,26 +240,56 @@ const Browse = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="local-matches" className="text-sm font-medium">Local matches only</Label>
-                  <p className="text-xs text-muted-foreground">Show profiles within 50 miles</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Age range</h3>
+                  <Slider 
+                    value={ageRange} 
+                    min={18} 
+                    max={60} 
+                    step={1}
+                    onValueChange={(value) => setAgeRange(value as number[])}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{ageRange[0]}</span>
+                    <span>{ageRange[1]}</span>
+                  </div>
                 </div>
-                <Switch id="local-matches" />
+                
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Height range</h3>
+                  <Slider 
+                    value={heightRange} 
+                    min={120} 
+                    max={215} 
+                    step={1}
+                    onValueChange={(value) => setHeightRange(value as number[])}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{Math.floor(heightRange[0]/30.48)}'{Math.round((heightRange[0]/2.54)%12)}"</span>
+                    <span>{Math.floor(heightRange[1]/30.48)}'{Math.round((heightRange[1]/2.54)%12)}"</span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Weight range</h3>
+                  <Slider 
+                    value={weightRange} 
+                    min={30} 
+                    max={125} 
+                    step={1}
+                    onValueChange={(value) => setWeightRange(value as number[])}
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{weightRange[0]}kg</span>
+                    <span>{weightRange[1]}kg</span>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="photos-only" className="text-sm font-medium">With photos only</Label>
-                  <p className="text-xs text-muted-foreground">Only show profiles with photos</p>
-                </div>
-                <Switch id="photos-only" defaultChecked />
-              </div>
-              
-              <div className="col-span-1 md:col-span-3 flex justify-end gap-2">
-                <Button variant="outline">Reset</Button>
-                <Button>Apply Filters</Button>
+              <div className="flex justify-end">
+                <Button className="bg-blue-500 hover:bg-blue-600">Search</Button>
               </div>
             </div>
           </CardContent>
