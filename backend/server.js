@@ -31,6 +31,11 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/relationships', require('./routes/relationshipRoutes'));
 app.use('/api/chats', require('./routes/chatRoutes'));
 
+// Root route for API check
+app.get('/api', (req, res) => {
+  res.json({ message: 'Welcome to Quluub API!' });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
