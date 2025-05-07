@@ -3,6 +3,18 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Define User type to match your MongoDB schema
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  fname: string;
+  lname: string;
+  plan?: string;
+  gender: string;
+  // Add other fields as needed
+}
+
 interface PrivateRouteProps {
   children: React.ReactNode;
   isAdmin?: boolean;
