@@ -3,8 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -17,7 +16,6 @@ import Matches from "./pages/Matches";
 import Settings from "./pages/Settings";
 import Alerts from "./pages/Alerts";
 import AdminDashboard from "./pages/AdminDashboard";
-import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -27,25 +25,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            
-            {/* Protected routes */}
-            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-            <Route path="/browse" element={<PrivateRoute><Browse /></PrivateRoute>} />
-            <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
-            <Route path="/matches" element={<PrivateRoute><Matches /></PrivateRoute>} />
-            <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
-            <Route path="/alerts" element={<PrivateRoute><Alerts /></PrivateRoute>} />
-            <Route path="/admin" element={<PrivateRoute isAdmin><AdminDashboard /></PrivateRoute>} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/browse" element={<Browse />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
