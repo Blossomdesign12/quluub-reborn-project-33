@@ -8,7 +8,8 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Database connection
-require('./config/db');
+const { connectDB } = require('./config/db');
+connectDB();
 
 // Initialize Express
 const app = express();

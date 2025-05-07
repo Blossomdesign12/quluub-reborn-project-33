@@ -4,7 +4,7 @@ const Relationship = require('../models/Relationship');
 const User = require('../models/User');
 const UserActivityLog = require('../models/UserActivityLog');
 
-// @desc    Send a follow/match request
+// @desc    Send a follow request
 // @route   POST /api/relationships/request
 // @access  Private
 exports.sendRequest = async (req, res) => {
@@ -12,81 +12,91 @@ exports.sendRequest = async (req, res) => {
     const { followedUserId } = req.body;
     const followerUserId = req.user._id.toString();
     
-    // Check if users exist
+    // Check if user is trying to follow themselves
+    if (followerUserId === followedUserId) {
+      return res.status(400).json({ message: "You cannot follow yourself" });
+    }
+    
+    // Check if followed user exists
     const followedUser = await User.findById(followedUserId);
     if (!followedUser) {
-      return res.status(404).json({ message: 'User to follow not found' });
+      return res.status(404).json({ message: "User not found" });
     }
     
     // Check if relationship already exists
     const existingRelationship = await Relationship.findOne({
-      $or: [
-        { follower_user_id: followerUserId, followed_user_id: followedUserId },
-        { follower_user_id: followedUserId, followed_user_id: followerUserId }
-      ]
+      follower_user_id: followerUserId,
+      followed_user_id: followedUserId,
     });
     
     if (existingRelationship) {
       return res.status(400).json({ 
-        message: 'Relationship already exists',
-        relationship: existingRelationship
+        message: `You have already ${existingRelationship.status === 'pending' ? 'sent a request to' : existingRelationship.status === 'matched' ? 'matched with' : 'been rejected by'} this user` 
       });
     }
     
-    // Create new relationship
-    const newRelationship = await Relationship.create({
+    // Create relationship
+    const relationship = new Relationship({
       id: uuidv4(),
       follower_user_id: followerUserId,
       followed_user_id: followedUserId,
-      status: 'pending'
+      status: "pending",
     });
     
-    // Log activity
+    await relationship.save();
+    
+    // Log the activity
     await UserActivityLog.create({
       userId: followerUserId,
       receiverId: followedUserId,
-      action: 'FOLLOWED'
+      action: "FOLLOWED",
     });
     
-    res.status(201).json(newRelationship);
+    res.status(201).json(relationship);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Respond to a relationship request
+// @desc    Respond to a follow request (accept or reject)
 // @route   PUT /api/relationships/:id/status
 // @access  Private
 exports.respondToRequest = async (req, res) => {
   try {
-    const { status } = req.body; // 'rejected' or 'matched'
+    const { status } = req.body;
+    const relationshipId = req.params.id;
     
-    // Validate status
     if (!['rejected', 'matched'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+      return res.status(400).json({ message: "Invalid status. Must be 'rejected' or 'matched'" });
     }
     
-    const relationship = await Relationship.findOne({ id: req.params.id });
+    // Find relationship
+    const relationship = await Relationship.findOne({ id: relationshipId });
     
     if (!relationship) {
-      return res.status(404).json({ message: 'Relationship not found' });
+      return res.status(404).json({ message: "Relationship not found" });
     }
     
-    // Only the followed user can respond
+    // Check if user is the one being followed (only they can respond)
     if (relationship.followed_user_id !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this relationship' });
+      return res.status(403).json({ message: "Not authorized to update this relationship" });
     }
     
-    // Update relationship status
+    // Check if relationship is in pending state
+    if (relationship.status !== 'pending') {
+      return res.status(400).json({ message: `Cannot update relationship that is already ${relationship.status}` });
+    }
+    
+    // Update status
     relationship.status = status;
     await relationship.save();
     
-    // Log activity
+    // Log the activity
     await UserActivityLog.create({
       userId: req.user._id.toString(),
       receiverId: relationship.follower_user_id,
-      action: status === 'rejected' ? 'REJECTED' : 'FOLLOWED'
+      action: status === 'matched' ? "FOLLOWED" : "REJECTED",
     });
     
     res.json(relationship);
@@ -96,89 +106,82 @@ exports.respondToRequest = async (req, res) => {
   }
 };
 
-// @desc    Withdraw a pending request
+// @desc    Withdraw a follow request
 // @route   DELETE /api/relationships/withdraw/:id
 // @access  Private
 exports.withdrawRequest = async (req, res) => {
   try {
-    const relationship = await Relationship.findOne({ id: req.params.id });
+    const relationshipId = req.params.id;
+    
+    // Find relationship
+    const relationship = await Relationship.findOne({ id: relationshipId });
     
     if (!relationship) {
-      return res.status(404).json({ message: 'Relationship not found' });
+      return res.status(404).json({ message: "Relationship not found" });
     }
     
-    // Only the follower can withdraw
+    // Check if user is the follower (only they can withdraw)
     if (relationship.follower_user_id !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to withdraw this request' });
+      return res.status(403).json({ message: "Not authorized to withdraw this relationship" });
     }
     
-    // Only pending requests can be withdrawn
+    // Check if relationship is in pending state
     if (relationship.status !== 'pending') {
-      return res.status(400).json({ message: 'Only pending requests can be withdrawn' });
+      return res.status(400).json({ message: `Cannot withdraw relationship that is already ${relationship.status}` });
     }
     
-    // Log activity
+    // Delete relationship
+    await relationship.remove();
+    
+    // Log the activity
     await UserActivityLog.create({
       userId: req.user._id.toString(),
       receiverId: relationship.followed_user_id,
-      action: 'WITHDREW'
+      action: "WITHDREW",
     });
     
-    // Delete the relationship
-    await relationship.deleteOne();
-    
-    res.json({ message: 'Request withdrawn successfully' });
+    res.json({ message: "Request withdrawn successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Get matches for current user
+// @desc    Get all matches for a user
 // @route   GET /api/relationships/matches
 // @access  Private
 exports.getMatches = async (req, res) => {
   try {
     const userId = req.user._id.toString();
     
-    // Find all relationships where status is 'matched' and user is involved
-    const matches = await Relationship.find({
-      status: 'matched',
+    // Find all matched relationships where user is follower or followed
+    const relationships = await Relationship.find({
       $or: [
         { follower_user_id: userId },
         { followed_user_id: userId }
-      ]
+      ],
+      status: 'matched'
     });
     
-    // Extract other user IDs
-    const matchedUserIds = matches.map(match => {
-      return match.follower_user_id === userId 
-        ? match.followed_user_id 
-        : match.follower_user_id;
+    // Get array of matched user IDs
+    const matchedUserIds = relationships.map(rel => {
+      return rel.follower_user_id === userId ? rel.followed_user_id : rel.follower_user_id;
     });
     
     // Get user details for matches
-    const matchedUsers = await User.find({
+    const matches = await User.find({
       _id: { $in: matchedUserIds }
-    }).select('-password -resetPasswordToken -resetPasswordTokenExpiration -validationToken');
+    }).select('-password');
     
-    // Create response with relationship info and user details
-    const matchesWithUserDetails = matches.map(match => {
-      const otherUserId = match.follower_user_id === userId 
-        ? match.followed_user_id 
-        : match.follower_user_id;
-      
-      const userDetails = matchedUsers.find(
-        u => u._id.toString() === otherUserId
-      );
-      
-      return {
-        relationship: match,
-        user: userDetails
-      };
+    res.json({
+      count: matches.length,
+      matches: matches.map(match => ({
+        ...match._doc,
+        relationship: relationships.find(rel => 
+          rel.follower_user_id === match._id.toString() || rel.followed_user_id === match._id.toString()
+        )
+      }))
     });
-    
-    res.json(matchesWithUserDetails);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });

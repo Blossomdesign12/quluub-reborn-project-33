@@ -41,7 +41,7 @@ export const authService = {
   
   getCurrentUser: async (): Promise<User | null> => {
     try {
-      const response = await apiClient.get<User>('/users/me');
+      const response = await apiClient.get<User>('/auth/profile');
       return response.data;
     } catch (error) {
       localStorage.removeItem('token');
@@ -80,6 +80,11 @@ export const relationshipService = {
     return response.data;
   },
   
+  withdrawRequest: async (relationshipId: string): Promise<any> => {
+    const response = await apiClient.delete(`/relationships/withdraw/${relationshipId}`);
+    return response.data;
+  },
+  
   getMatches: async (): Promise<any[]> => {
     const response = await apiClient.get('/relationships/matches');
     return response.data;
@@ -102,6 +107,11 @@ export const chatService = {
     const response = await apiClient.post('/chats/send', { receiverId, message });
     return response.data;
   },
+  
+  getUnreadCount: async (): Promise<number> => {
+    const response = await apiClient.get('/chats/unread');
+    return response.data.unreadCount;
+  }
 };
 
 export default apiClient;

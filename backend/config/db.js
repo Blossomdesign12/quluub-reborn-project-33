@@ -1,18 +1,19 @@
 
 const mongoose = require("mongoose");
 
-const connectDB = mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://johnkennedy3313:johnkennedy@cluster0.kqk80xr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://johnkennedy3313:johnkennedy@cluster0.kqk80xr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
 
-mongoose.connection.on("connected", () => {
-  console.log("Connected to MongoDB");
-});
-
-mongoose.connection.on("error", (err) => {
-  console.log("MongoDB connection error: ", err);
-});
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
 
 // Utility function to safely convert string or timestamp to ObjectId
 const toObjectId = (id) => {
@@ -31,6 +32,7 @@ const toObjectId = (id) => {
 };
 
 module.exports = {
+  connectDB,
   mongoose,
   toObjectId
 };
