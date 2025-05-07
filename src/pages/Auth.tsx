@@ -1,38 +1,36 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/LoginForm";
 import SignupForm from "@/components/SignupForm";
 import { Heart, Shield, MessageCircle } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const navigate = useNavigate();
+  const { login, signup } = useAuth();
   
-  const handleLogin = (email: string, password: string) => {
-    // In a real app, this would store the token in localStorage/cookies
-    // and set the authenticated user in a global context
-    console.log("Logging in with:", email, password);
-    
-    toast({
-      title: "Login successful",
-      description: "Welcome back to Quluub!",
-    });
-    
-    navigate("/browse");
+  const handleLogin = async (email: string, password: string) => {
+    await login(email, password);
   };
   
-  const handleSignup = (name: string, email: string, password: string, gender: string) => {
-    // In a real app, this would create a new user account
-    console.log("Signing up with:", name, email, password, gender);
+  const handleSignup = async (name: string, email: string, password: string, gender: string) => {
+    // Split the name into first and last name
+    const nameParts = name.split(" ");
+    const fname = nameParts[0];
+    const lname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
     
-    toast({
-      title: "Account created successfully",
-      description: "Welcome to Quluub!",
-    });
+    // Prepare user data based on your MongoDB schema
+    const userData = {
+      username: email.split("@")[0], // Simple username generation
+      email,
+      password,
+      fname,
+      lname,
+      gender
+    };
     
-    navigate("/browse");
+    await signup(userData);
   };
 
   return (
