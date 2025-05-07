@@ -13,12 +13,12 @@ import {
 } from "@/components/ui/card";
 
 interface LoginFormProps {
-  onLogin: (email: string, password: string) => void;
+  onLogin: (usernameOrEmail: string, password: string) => void;
   onSwitchToSignup: () => void;
 }
 
 const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
-  const [email, setEmail] = useState("");
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
@@ -27,9 +27,7 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
     setIsLoading(true);
     
     try {
-      // In a real app, this would make an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      onLogin(email, password);
+      await onLogin(usernameOrEmail, password);
     } catch (error) {
       console.error("Login error:", error);
     } finally {
@@ -48,13 +46,13 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="usernameOrEmail">Username or Email</Label>
             <Input 
-              id="email"
-              type="email" 
-              placeholder="your@email.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="usernameOrEmail"
+              type="text" 
+              placeholder="username or email" 
+              value={usernameOrEmail}
+              onChange={(e) => setUsernameOrEmail(e.target.value)}
               required
             />
           </div>

@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
