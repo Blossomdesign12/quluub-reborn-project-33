@@ -1,38 +1,71 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import SignupForm from "@/components/SignupForm";
 import { Heart, Shield, MessageCircle } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, signup } = useAuth();
   
-  const handleLogin = (email: string, password: string) => {
-    // In a real app, this would store the token in localStorage/cookies
-    // and set the authenticated user in a global context
-    console.log("Logging in with:", email, password);
-    
-    toast({
-      title: "Login successful",
-      description: "Welcome back to Quluub!",
-    });
-    
-    navigate("/browse");
+  // Get the return URL from location state or default to /browse
+  const from = (location.state as { from?: string })?.from || "/browse";
+  
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await login({ email, password });
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to Quluub!",
+      });
+      
+      navigate(from);
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: "Invalid email or password",
+        variant: "destructive",
+      });
+    }
   };
   
-  const handleSignup = (name: string, email: string, password: string, gender: string) => {
-    // In a real app, this would create a new user account
-    console.log("Signing up with:", name, email, password, gender);
+  const handleSignup = async (name: string, email: string, password: string, gender: string) => {
+    // Split name into first name and last name
+    const nameParts = name.trim().split(/\s+/);
+    const fname = nameParts[0];
+    const lname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
     
-    toast({
-      title: "Account created successfully",
-      description: "Welcome to Quluub!",
-    });
-    
-    navigate("/browse");
+    try {
+      await signup({
+        username: email.split('@')[0], // Generate a username from email
+        email,
+        password,
+        fname,
+        lname,
+        gender: gender === "male" ? "male" : "female",
+      });
+      
+      toast({
+        title: "Account created successfully",
+        description: "Welcome to Quluub!",
+      });
+      
+      navigate("/browse");
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Signup failed",
+        description: "Email may already be in use",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
