@@ -11,6 +11,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
 
 interface LoginFormProps {
   onLogin: (usernameOrEmail: string, password: string) => void;
@@ -21,15 +22,18 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     
     try {
       await onLogin(usernameOrEmail, password);
     } catch (error) {
       console.error("Login error:", error);
+      setError("Invalid username/email or password. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -45,6 +49,12 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md text-sm flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>{error}</span>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="usernameOrEmail">Username or Email</Label>
             <Input 

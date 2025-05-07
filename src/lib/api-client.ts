@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
@@ -24,15 +25,25 @@ apiClient.interceptors.request.use((config) => {
 // Authentication services
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    localStorage.setItem('token', response.data.token);
-    return response.data;
+    try {
+      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+      localStorage.setItem('token', response.data.token);
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
   
   signup: async (userData: SignupData): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/auth/signup', userData);
-    localStorage.setItem('token', response.data.token);
-    return response.data;
+    try {
+      const response = await apiClient.post<AuthResponse>('/auth/signup', userData);
+      localStorage.setItem('token', response.data.token);
+      return response.data;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
   },
   
   logout: (): void => {
@@ -44,6 +55,7 @@ export const authService = {
       const response = await apiClient.get<User>('/auth/profile');
       return response.data;
     } catch (error) {
+      console.error('Get current user error:', error);
       localStorage.removeItem('token');
       return null;
     }

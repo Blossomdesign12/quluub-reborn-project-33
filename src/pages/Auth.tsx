@@ -26,13 +26,16 @@ const Auth = () => {
       });
       
       navigate(from);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      
       toast({
         title: "Login failed",
-        description: "Invalid credentials",
+        description: error?.response?.data?.message || "Invalid credentials",
         variant: "destructive",
       });
+      
+      throw error; // Re-throw to let the form component handle it
     }
   };
   
@@ -43,8 +46,10 @@ const Auth = () => {
     const lname = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
     
     try {
+      const username = email.split('@')[0] + Math.floor(Math.random() * 1000); // Generate a more unique username
+      
       await signup({
-        username: email.split('@')[0], // Generate a username from email
+        username,
         email,
         password,
         fname,
@@ -58,13 +63,16 @@ const Auth = () => {
       });
       
       navigate("/browse");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
+      
       toast({
         title: "Signup failed",
-        description: "Email may already be in use",
+        description: error?.response?.data?.message || "Email may already be in use",
         variant: "destructive",
       });
+      
+      throw error;
     }
   };
 
