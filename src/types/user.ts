@@ -42,7 +42,7 @@ export interface User {
 }
 
 export interface LoginCredentials {
-  email: string;
+  usernameOrEmail: string;
   password: string;
 }
 

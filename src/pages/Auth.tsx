@@ -16,9 +16,9 @@ const Auth = () => {
   // Get the return URL from location state or default to /browse
   const from = (location.state as { from?: string })?.from || "/browse";
   
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (usernameOrEmail: string, password: string) => {
     try {
-      await login({ email, password });
+      await login({ usernameOrEmail, password });
       
       toast({
         title: "Login successful",
@@ -30,7 +30,7 @@ const Auth = () => {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: "Invalid email or password",
+        description: "Invalid credentials",
         variant: "destructive",
       });
     }
