@@ -76,6 +76,17 @@ export const authService = {
       return null;
     }
   },
+  
+  getAllUsers: async (): Promise<User[]> => {
+    try {
+      const response = await apiClient.get<User[]>('/auth/users');
+      console.log('All users:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Get all users error:', error);
+      throw error;
+    }
+  }
 };
 
 // User services

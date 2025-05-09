@@ -16,13 +16,16 @@ exports.signup = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
     
+    // Create user with proper default values
     const user = await User.create({
       username,
       email,
       password,
       fname,
       lname,
-      gender
+      gender,
+      plan: "freemium", // Set default plan
+      status: "active"  // Set default status
     });
     
     if (user) {
@@ -44,7 +47,7 @@ exports.signup = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Signup error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -56,14 +59,13 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
     
-    // Find user by email or username
-    const user = await User.findOne({
-      $or: [
-        { username: username }
-      ]
-    });
+    console.log('Login attempt for username:', username);
+    
+    // Find user by username
+    const user = await User.findOne({ username });
     
     if (!user) {
+      console.log('User not found:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
@@ -71,12 +73,15 @@ exports.login = async (req, res) => {
     const isMatch = await user.matchPassword(password);
     
     if (!isMatch) {
+      console.log('Password mismatch for user:', username);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     
     // Update last seen
     user.lastSeen = new Date();
     await user.save();
+    
+    console.log('User logged in successfully:', username);
     
     res.json({
       user: {
@@ -102,7 +107,7 @@ exports.login = async (req, res) => {
       token: generateToken(user._id)
     });
   } catch (error) {
-    console.error(error);
+    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -143,7 +148,20 @@ exports.getUserProfile = async (req, res) => {
       res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Get profile error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    List all users (for debugging)
+// @route   GET /api/auth/users
+// @access  Public (for debugging only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (error) {
+    console.error('Get all users error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
