@@ -19,7 +19,7 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
-  const [username, setusername] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,6 +30,7 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
     setError("");
     
     try {
+      console.log("Attempting login with:", username);
       await onLogin(username, password);
     } catch (error) {
       console.error("Login error:", error);
@@ -62,7 +63,7 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
               type="text" 
               placeholder="username or email" 
               value={username}
-              onChange={(e) => setusername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
