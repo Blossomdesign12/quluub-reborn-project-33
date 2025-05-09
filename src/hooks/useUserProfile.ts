@@ -19,6 +19,7 @@ export const useUserProfile = (userId?: string) => {
       
       try {
         setIsLoading(true);
+        console.log("Fetching user profile for ID:", userId);
         const userData = await userService.getProfile(userId);
         console.log("Fetched user profile:", userData);
         setProfile(userData);

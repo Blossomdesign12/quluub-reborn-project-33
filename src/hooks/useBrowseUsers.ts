@@ -19,6 +19,7 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
+        console.log("Fetching browse users with params:", params);
         const fetchedUsers = await userService.getBrowseUsers(params);
         console.log("Fetched browse users:", fetchedUsers);
         setUsers(fetchedUsers);
