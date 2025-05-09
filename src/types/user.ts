@@ -7,7 +7,7 @@ export interface User {
   password?: string;
   fname: string;
   lname: string;
-  plan: "freemium" | "premium" | "pro";
+  plan: "freemium" | "premium" | "pro" | null;
   gender: "male" | "female";
   dob?: Date;
   startedPracticing?: Date;
@@ -15,7 +15,8 @@ export interface User {
   validationToken?: string;
   resetPasswordToken?: string;
   resetPasswordTokenExpiration?: Date | null;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "NEW";
+  type?: "REGULAR" | "NEW";
   referralCode?: string;
   referredBy?: string;
   referralStatus?: 'Pending' | 'Verified' | 'Rejected';
@@ -26,11 +27,15 @@ export interface User {
   };
   videoCallCredits?: number;
   waliDetails?: string;
+  kunya?: string;
   nationality?: string;
   country?: string;
+  region?: string;
   build?: string;
   appearance?: string;
   maritalStatus?: string;
+  noOfChildren?: string;
+  ethnicity?: string;
   patternOfSalaah?: string;
   genotype?: string;
   summary?: string;

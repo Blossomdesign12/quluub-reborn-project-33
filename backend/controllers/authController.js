@@ -62,12 +62,20 @@ exports.login = async (req, res) => {
     console.log('Login attempt for username:', username);
     
     // Find user by username
-    const user = await User.findOne({ username });
+    let user = await User.findOne({ username });
     
     if (!user) {
-      console.log('User not found:', username);
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log('User not found by username, trying email...');
+      // Try finding by email if username fails
+      user = await User.findOne({ email: username });
+      
+      if (!user) {
+        console.log('User not found:', username);
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
     }
+    
+    console.log('User found:', user.username);
     
     // Check if password matches
     const isMatch = await user.matchPassword(password);
@@ -79,6 +87,16 @@ exports.login = async (req, res) => {
     
     // Update last seen
     user.lastSeen = new Date();
+    
+    // If user has null or invalid plan/status, set defaults
+    if (!user.plan || user.plan === 'null') {
+      user.plan = 'freemium';
+    }
+    
+    if (!user.status || (user.status !== 'active' && user.status !== 'inactive' && user.status !== 'NEW')) {
+      user.status = 'active';
+    }
+    
     await user.save();
     
     console.log('User logged in successfully:', username);
@@ -128,8 +146,8 @@ exports.getUserProfile = async (req, res) => {
         fname: user.fname,
         lname: user.lname,
         gender: user.gender,
-        plan: user.plan,
-        status: user.status,
+        plan: user.plan || 'freemium',
+        status: user.status || 'active',
         nationality: user.nationality,
         country: user.country,
         build: user.build,

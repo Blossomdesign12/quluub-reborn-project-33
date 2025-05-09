@@ -18,6 +18,7 @@ const Auth = () => {
   
   const handleLogin = async (username: string, password: string) => {
     try {
+      console.log("Login attempt with username:", username);
       await login({ username, password });
       
       toast({

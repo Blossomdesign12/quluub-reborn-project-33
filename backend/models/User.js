@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     },
     plan: { 
       type: String, 
-      enum: ["freemium", "premium", "pro"], 
+      enum: ["freemium", "premium", "pro", null], 
       default: "freemium" 
     },
     gender: { 
@@ -60,8 +60,12 @@ const userSchema = new mongoose.Schema(
     },
     status: { 
       type: String, 
-      enum: ["active", "inactive"], 
+      enum: ["active", "inactive", "NEW"], 
       default: "active" 
+    },
+    type: {
+      type: String,
+      default: "REGULAR"
     },
     referralCode: {
       type: String,
@@ -90,11 +94,15 @@ const userSchema = new mongoose.Schema(
       type: String, // JSON string e.g. '{"email":"wali@example.com"}'
       default: ""
     },
+    kunya: { type: String },
     nationality: { type: String },
     country: { type: String },
+    region: { type: String },
     build: { type: String },
     appearance: { type: String },
     maritalStatus: { type: String },
+    noOfChildren: { type: String },
+    ethnicity: { type: String },
     patternOfSalaah: { type: String },
     genotype: { type: String },
     summary: { type: String },
