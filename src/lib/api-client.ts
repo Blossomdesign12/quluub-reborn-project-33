@@ -5,6 +5,8 @@ import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/
 // Use environment variable or fallback to localhost
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+console.log('API URL:', API_URL); // Debug the API URL
+
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
@@ -22,10 +24,23 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Log responses for debugging
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log(`API Response [${response.config.method}] ${response.config.url}:`, response.status);
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error.response?.status, error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
 // Authentication services
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
+      console.log('Attempting login with:', { ...credentials, password: '****' });
       const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
       localStorage.setItem('token', response.data.token);
       return response.data;
@@ -37,6 +52,7 @@ export const authService = {
   
   signup: async (userData: SignupData): Promise<AuthResponse> => {
     try {
+      console.log('Attempting signup with:', { ...userData, password: '****' });
       const response = await apiClient.post<AuthResponse>('/auth/signup', userData);
       localStorage.setItem('token', response.data.token);
       return response.data;

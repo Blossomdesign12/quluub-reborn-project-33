@@ -16,9 +16,9 @@ const Auth = () => {
   // Get the return URL from location state or default to /browse
   const from = (location.state as { from?: string })?.from || "/browse";
   
-  const handleLogin = async (usernameOrEmail: string, password: string) => {
+  const handleLogin = async (username: string, password: string) => {
     try {
-      await login({ usernameOrEmail, password });
+      await login({ username, password });
       
       toast({
         title: "Login successful",

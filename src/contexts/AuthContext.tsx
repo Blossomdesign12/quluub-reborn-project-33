@@ -36,8 +36,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
+          console.log('Found token in storage, fetching user data...');
           const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
+          if (currentUser) {
+            console.log('User authenticated:', currentUser.username);
+            setUser(currentUser);
+          } else {
+            console.log('No user data returned despite having token');
+          }
+        } else {
+          console.log('No authentication token found');
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
@@ -50,20 +58,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<User> => {
-    const response = await authService.login(credentials);
-    setUser(response.user);
-    return response.user;
+    setIsLoading(true);
+    try {
+      const response = await authService.login(credentials);
+      console.log('Login successful:', response.user.username);
+      setUser(response.user);
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const signup = async (data: SignupData): Promise<User> => {
-    const response = await authService.signup(data);
-    setUser(response.user);
-    return response.user;
+    setIsLoading(true);
+    try {
+      const response = await authService.signup(data);
+      console.log('Signup successful:', response.user.username);
+      setUser(response.user);
+      return response.user;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
     authService.logout();
     setUser(null);
+    console.log('User logged out');
   };
 
   return (

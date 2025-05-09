@@ -14,12 +14,12 @@ import {
 import { AlertCircle } from "lucide-react";
 
 interface LoginFormProps {
-  onLogin: (usernameOrEmail: string, password: string) => void;
+  onLogin: (username: string, password: string) => void;
   onSwitchToSignup: () => void;
 }
 
 const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
-  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [username, setusername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +30,7 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
     setError("");
     
     try {
-      await onLogin(usernameOrEmail, password);
+      await onLogin(username, password);
     } catch (error) {
       console.error("Login error:", error);
       setError("Invalid username/email or password. Please try again.");
@@ -56,13 +56,13 @@ const LoginForm = ({ onLogin, onSwitchToSignup }: LoginFormProps) => {
             </div>
           )}
           <div className="space-y-2">
-            <Label htmlFor="usernameOrEmail">Username or Email</Label>
+            <Label htmlFor="username">Username or Email</Label>
             <Input 
-              id="usernameOrEmail"
+              id="username"
               type="text" 
               placeholder="username or email" 
-              value={usernameOrEmail}
-              onChange={(e) => setUsernameOrEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setusername(e.target.value)}
               required
             />
           </div>

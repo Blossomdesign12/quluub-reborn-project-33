@@ -19,10 +19,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// CORS configuration
+// CORS configuration with more detailed options
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+<<<<<<< HEAD
+  origin: process.env.CLIENT_URL || 'http://localhost:8080',
   credentials: true
+=======
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
+>>>>>>> 15ede904f661a604affe17badf12ee1e04215bb5
 }));
 
 // API Routes

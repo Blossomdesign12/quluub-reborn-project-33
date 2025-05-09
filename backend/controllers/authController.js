@@ -54,13 +54,12 @@ exports.signup = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
-    const { usernameOrEmail, password } = req.body;
+    const { username, password } = req.body;
     
     // Find user by email or username
     const user = await User.findOne({
       $or: [
-        { email: usernameOrEmail },
-        { username: usernameOrEmail }
+        { username: username }
       ]
     });
     
