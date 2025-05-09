@@ -1,49 +1,65 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
+import { relationshipService } from "@/lib/api-client";
+import { useToast } from "@/components/ui/use-toast";
 
 const Matches = () => {
-  // In a real app, this would come from an API
-  const matches = [
-    {
-      id: "1",
-      name: "Fatima",
-      age: 28,
-      location: "New York, NY",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchDate: "Today",
-      tags: ["Doctor", "Practicing", "Arab"]
-    },
-    {
-      id: "2",
-      name: "Ahmad",
-      age: 30,
-      location: "Boston, MA",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchDate: "Yesterday",
-      tags: ["Engineer", "Very Religious", "Turkish"]
-    },
-    {
-      id: "3",
-      name: "Mariam",
-      age: 26,
-      location: "Chicago, IL",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchDate: "3 days ago",
-      tags: ["Teacher", "Hijabi", "Desi"]
-    },
-    {
-      id: "4",
-      name: "Tariq",
-      age: 29,
-      location: "Seattle, WA",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchDate: "1 week ago",
-      tags: ["Business", "Practicing", "African"]
-    },
-  ];
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        setLoading(true);
+        const response = await relationshipService.getMatches();
+        console.log("Matches data:", response);
+        setMatches(response.matches || []);
+      } catch (error) {
+        console.error("Failed to fetch matches:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your matches. Please try again later.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMatches();
+  }, [toast]);
+
+  // Function to calculate age from DOB
+  const calculateAge = (dob: string | Date | undefined) => {
+    if (!dob) return null;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Function to format match date (relative to now)
+  const formatMatchDate = (date: string) => {
+    const matchDate = new Date(date);
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - matchDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) return "Today";
+    if (diffInDays === 1) return "Yesterday";
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} week${Math.floor(diffInDays / 7) > 1 ? 's' : ''} ago`;
+    return `${Math.floor(diffInDays / 30)} month${Math.floor(diffInDays / 30) > 1 ? 's' : ''} ago`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -51,17 +67,25 @@ const Matches = () => {
       <div className="container py-6">
         <h1 className="text-2xl font-bold mb-6">Your Potential Spouses</h1>
         
-        {matches.length > 0 ? (
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {matches.map((match) => (
               <MatchCard 
-                key={match.id}
-                name={match.name}
-                age={match.age}
-                location={match.location}
-                photoUrl={match.photoUrl}
-                matchDate={match.matchDate}
-                tags={match.tags}
+                key={match._id}
+                name={`${match.fname} ${match.lname}`}
+                age={calculateAge(match.dob) || 0}
+                location={match.country || "Location not specified"}
+                photoUrl="" // We'll need to implement profile photos later
+                matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
+                tags={[
+                  match.workEducation?.split(' ')[0] || "",
+                  match.patternOfSalaah || "",
+                  match.nationality || ""
+                ].filter(Boolean)}
               />
             ))}
           </div>

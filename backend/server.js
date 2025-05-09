@@ -21,8 +21,11 @@ app.use(morgan('dev'));
 
 // CORS configuration with more detailed options
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:8080',
-  credentials: true
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // API Routes
