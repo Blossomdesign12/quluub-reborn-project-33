@@ -90,8 +90,16 @@ export const userService = {
     return response.data;
   },
   
-  getBrowseUsers: async (): Promise<User[]> => {
-    const response = await apiClient.get<User[]>('/users/browse');
+  getBrowseUsers: async (params: { country?: string, nationality?: string } = {}): Promise<User[]> => {
+    // Build the query string from params
+    const queryParams = new URLSearchParams();
+    if (params.country) queryParams.append('country', params.country);
+    if (params.nationality) queryParams.append('nationality', params.nationality);
+    
+    const queryString = queryParams.toString();
+    const url = `/users/browse${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get<User[]>(url);
     return response.data;
   },
 };
@@ -113,8 +121,9 @@ export const relationshipService = {
     return response.data;
   },
   
-  getMatches: async (): Promise<any[]> => {
+  getMatches: async (): Promise<any> => {
     const response = await apiClient.get('/relationships/matches');
+    console.log("Matches API response:", response.data);
     return response.data;
   },
 };
