@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,6 +119,7 @@ const Browse = () => {
                 <div className="h-96 bg-gray-100 flex items-center justify-center">
                   <ProfileImage
                     src=""
+                    alt={`${currentUser?.fname || ''} ${currentUser?.lname || ''}`}
                     fallback={(currentUser?.fname?.charAt(0) || "") + (currentUser?.lname?.charAt(0) || "")}
                     size="xl"
                     className="h-32 w-32 text-3xl"
