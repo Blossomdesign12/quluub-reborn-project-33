@@ -3,11 +3,12 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, X, ChevronUp, ChevronDown } from "lucide-react";
+import { Heart, X, ChevronUp, ChevronDown, Send } from "lucide-react";
 import ProfileImage from "@/components/ProfileImage";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
+import { useNavigate } from "react-router-dom";
 
 const Browse = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -16,6 +17,7 @@ const Browse = () => {
   const [processingAction, setProcessingAction] = useState(false);
   const [expandDetails, setExpandDetails] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Get current user
   const currentUser = users[currentIndex];
@@ -24,7 +26,7 @@ const Browse = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const fetchedUsers = await userService.getBrowseUsers();
+        const fetchedUsers = await userService.getBrowseUsers({ showAll: true });
         console.log("Browse users:", fetchedUsers);
         if (fetchedUsers && fetchedUsers.length > 0) {
           setUsers(fetchedUsers);
@@ -84,6 +86,11 @@ const Browse = () => {
     goToNextUser();
   };
 
+  const handleMessage = () => {
+    if (!currentUser || processingAction) return;
+    navigate(`/messages?userId=${currentUser._id}`);
+  };
+
   const goToNextUser = () => {
     if (currentIndex < users.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -137,9 +144,9 @@ const Browse = () => {
           <div className="max-w-xl mx-auto">
             <Card className="overflow-hidden">
               <div className="relative">
-                <div className="h-96 bg-gray-100 flex items-center justify-center">
+                <div className="h-96 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                   <ProfileImage
-                    src={currentUser?.profile_pic || ""}
+                    src=""
                     alt={`${currentUser?.fname || ''} ${currentUser?.lname || ''}`}
                     fallback={(currentUser?.fname?.charAt(0) || "") + (currentUser?.lname?.charAt(0) || "")}
                     size="xl"
@@ -262,6 +269,15 @@ const Browse = () => {
                   disabled={processingAction}
                 >
                   <Heart className="h-6 w-6 text-green-500" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-14 w-14 rounded-full"
+                  onClick={handleMessage}
+                  disabled={processingAction}
+                >
+                  <Send className="h-6 w-6 text-purple-500" />
                 </Button>
               </div>
             </Card>

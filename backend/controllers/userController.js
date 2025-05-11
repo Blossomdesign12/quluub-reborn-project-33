@@ -69,7 +69,8 @@ exports.updateUserProfile = async (req, res) => {
     const updatableFields = [
       'fname', 'lname', 'nationality', 'country', 'build', 
       'appearance', 'maritalStatus', 'patternOfSalaah', 
-      'genotype', 'summary', 'workEducation', 'hidden'
+      'genotype', 'summary', 'workEducation', 'hidden',
+      'profile_pic', 'kunya', 'dob', 'ethnicity'
     ];
     
     updatableFields.forEach(field => {
@@ -99,7 +100,11 @@ exports.updateUserProfile = async (req, res) => {
       genotype: updatedUser.genotype,
       summary: updatedUser.summary,
       workEducation: updatedUser.workEducation,
-      hidden: updatedUser.hidden
+      hidden: updatedUser.hidden,
+      kunya: updatedUser.kunya,
+      dob: updatedUser.dob,
+      ethnicity: updatedUser.ethnicity,
+      profile_pic: updatedUser.profile_pic
     });
   } catch (error) {
     console.error(error);
@@ -113,25 +118,27 @@ exports.updateUserProfile = async (req, res) => {
 exports.getBrowseUsers = async (req, res) => {
   try {
     console.log("Getting browse users with query:", req.query);
+    const currentUser = await User.findById(req.user._id);
     
-    // Default filters - we'll simplify to get all users for now
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Default filters - only exclude current user
     const filters = {
       _id: { $ne: req.user._id }, // Exclude current user
     };
     
-    // Only apply status filter if we want active users
-    // Removing this might help us see users in testing environment
-    // filters.status = 'active'; // Only active users
-    
-    // Gender filtering - only apply if we want to filter by opposite gender
-    // Removing this might help us see users in testing environment
-    /*
-    if (currentUser.gender === 'male') {
-      filters.gender = 'female';
-    } else {
-      filters.gender = 'male';
+    // If not showing all users, filter by gender
+    if (!req.query.showAll) {
+      // Match with opposite gender
+      filters.gender = currentUser.gender === 'male' ? 'female' : 'male';
+      
+      // Match with same country if provided
+      if (currentUser.country) {
+        filters.country = currentUser.country;
+      }
     }
-    */
     
     // Additional filters from query
     if (req.query.country) {
@@ -145,7 +152,7 @@ exports.getBrowseUsers = async (req, res) => {
     console.log("Applying filters:", filters);
     
     // Allow pagination for large datasets
-    const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
     
     const users = await User.find(filters)
       .select('-password -resetPasswordToken -resetPasswordTokenExpiration -validationToken')

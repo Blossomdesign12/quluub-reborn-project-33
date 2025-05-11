@@ -117,15 +117,17 @@ const Matches = () => {
         ) : matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {matches.map((match) => (
-              <div key={match._id} onClick={() => handleStartChat(match._id!)} className="cursor-pointer">
+              <div key={match._id}>
                 <MatchCard 
                   name={`${match.fname} ${match.lname}`}
                   age={calculateAge(match.dob) || 0}
                   location={match.country || "Location not specified"}
-                  photoUrl={match.profile_pic || ""} 
+                  photoUrl="" // Always use icon
                   matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
                   tags={extractInterests(match)}
-                  bio="Click to start chatting"
+                  bio={match.summary || "No summary provided"}
+                  onChat={() => handleStartChat(match._id!)}
+                  userId={match._id}
                 />
               </div>
             ))}

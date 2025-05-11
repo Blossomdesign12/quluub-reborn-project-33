@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Heart, X, MessageSquare } from "lucide-react";
+import { Heart, X, MessageSquare, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import ProfileImage from "@/components/ProfileImage";
 
@@ -18,6 +18,8 @@ interface MatchCardProps {
   onLike?: () => void;
   onPass?: () => void;
   onChat?: () => void;
+  onMessage?: () => void;
+  userId?: string;
 }
 
 const MatchCard = ({
@@ -32,7 +34,9 @@ const MatchCard = ({
   tags = [],
   onLike,
   onPass,
-  onChat
+  onChat,
+  onMessage,
+  userId
 }: MatchCardProps) => {
   const generateInitials = (name: string) => {
     return name.split(' ')
@@ -45,23 +49,16 @@ const MatchCard = ({
   return (
     <Card className="overflow-hidden">
       <div className="relative h-60">
-        {photoUrl ? (
-          <img
-            src={photoUrl}
+        {/* Always use icon/avatar instead of photo */}
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+          <ProfileImage
+            src=""
             alt={name}
-            className="absolute inset-0 w-full h-full object-cover"
+            fallback={generateInitials(name)}
+            size="lg"
+            className="h-24 w-24 text-3xl"
           />
-        ) : (
-          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-            <ProfileImage
-              src=""
-              alt={name}
-              fallback={generateInitials(name)}
-              size="lg"
-              className="h-24 w-24 text-3xl"
-            />
-          </div>
-        )}
+        </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
           <h3 className="text-xl font-bold">{name}, {age}</h3>
           <p className="text-sm opacity-80">{location}</p>
@@ -88,7 +85,7 @@ const MatchCard = ({
           </div>
         )}
       </CardContent>
-      {(onLike || onPass || onChat) && (
+      {(onLike || onPass || onChat || onMessage) && (
         <CardFooter className="flex justify-center gap-4 p-4 pt-0">
           {onPass && (
             <Button
@@ -129,6 +126,20 @@ const MatchCard = ({
               }}
             >
               <MessageSquare className="h-6 w-6 text-blue-500" />
+            </Button>
+          )}
+          
+          {onMessage && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 rounded-full border-2 hover:border-purple-500 hover:bg-purple-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMessage();
+              }}
+            >
+              <Send className="h-6 w-6 text-purple-500" />
             </Button>
           )}
         </CardFooter>

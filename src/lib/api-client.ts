@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
@@ -100,12 +101,13 @@ export const userService = {
     return response.data;
   },
   
-  getBrowseUsers: async (params: { country?: string, nationality?: string, limit?: number } = {}): Promise<User[]> => {
+  getBrowseUsers: async (params: { country?: string, nationality?: string, limit?: number, showAll?: boolean } = {}): Promise<User[]> => {
     // Build the query string from params
     const queryParams = new URLSearchParams();
     if (params.country) queryParams.append('country', params.country);
     if (params.nationality) queryParams.append('nationality', params.nationality);
     if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.showAll) queryParams.append('showAll', 'true');
     
     const queryString = queryParams.toString();
     const url = `/users/browse${queryString ? `?${queryString}` : ''}`;

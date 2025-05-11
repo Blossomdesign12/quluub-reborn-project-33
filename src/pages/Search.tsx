@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -18,6 +18,7 @@ import { useBrowseUsers } from "@/hooks/useBrowseUsers";
 import { relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
+import { useNavigate } from "react-router-dom";
 
 const Search = () => {
   const [ageRange, setAgeRange] = useState([18, 60]);
@@ -30,12 +31,16 @@ const Search = () => {
   const [showBeardOnly, setShowBeardOnly] = useState(false);
   
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Filter params for API
   const [filterParams, setFilterParams] = useState<{
     country?: string;
     nationality?: string;
-  }>({});
+    showAll?: boolean;
+  }>({
+    showAll: true
+  });
   
   // Use the hook to fetch users
   const { users, isLoading, error } = useBrowseUsers(filterParams);
@@ -89,12 +94,13 @@ const Search = () => {
   const handleApplyFilters = () => {
     setIsApplyingFilters(true);
     
-    const params: { country?: string; nationality?: string } = {};
+    const params: { country?: string; nationality?: string; showAll?: boolean } = {
+      showAll: true
+    };
     
     // Add country filter if selected
     if (location !== "anywhere") {
       // Convert location selection to country name
-      // This would need a proper mapping in a real app
       params.country = location === "anywhere" ? undefined : location;
     }
     
@@ -131,6 +137,10 @@ const Search = () => {
       title: "Passed",
       description: "You've passed on this profile.",
     });
+  };
+
+  const handleStartChat = (userId: string) => {
+    navigate(`/messages?userId=${userId}`);
   };
 
   return (
@@ -324,9 +334,6 @@ const Search = () => {
                     return null;
                   }
                   
-                  // Skip based on hijab/beard preferences if set
-                  // This would need real data fields in the user object
-                  
                   return (
                     <MatchCard 
                       key={user._id}
@@ -336,8 +343,10 @@ const Search = () => {
                       photoUrl={user.profile_pic || ""}
                       matchPercentage={Math.floor(Math.random() * 30) + 70} // Placeholder for now
                       tags={extractTags(user)}
+                      userId={user._id}
                       onLike={() => handleSendInterest(user._id!)}
                       onPass={() => handlePass(user._id!)}
+                      onMessage={() => handleStartChat(user._id!)}
                     />
                   );
                 })}

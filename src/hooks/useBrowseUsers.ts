@@ -8,6 +8,7 @@ interface UseBrowseUsersParams {
   country?: string;
   nationality?: string;
   limit?: number;
+  showAll?: boolean; // Add a new parameter to show all users
 }
 
 export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
@@ -21,7 +22,10 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
       try {
         setIsLoading(true);
         console.log("Fetching browse users with params:", params);
-        const fetchedUsers = await userService.getBrowseUsers(params);
+        const fetchedUsers = await userService.getBrowseUsers({
+          ...params,
+          showAll: true // Always fetch all users
+        });
         console.log("Fetched browse users:", fetchedUsers);
         
         // Log some statistics about the data
@@ -33,12 +37,6 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
           console.log(`Users with summary: ${fetchedUsers.filter(u => u.summary).length}`);
         } else {
           console.log("No users fetched or empty users array");
-          // Retry with different parameters if no users were found
-          if (params.country || params.nationality) {
-            console.log("Retrying without filters to get all users");
-            const allUsers = await userService.getBrowseUsers({});
-            setUsers(allUsers);
-          }
         }
         
         setUsers(fetchedUsers || []);
