@@ -22,6 +22,16 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
         console.log("Fetching browse users with params:", params);
         const fetchedUsers = await userService.getBrowseUsers(params);
         console.log("Fetched browse users:", fetchedUsers);
+        
+        // Log some statistics about the data
+        if (fetchedUsers && fetchedUsers.length > 0) {
+          console.log(`Fetched ${fetchedUsers.length} users`);
+          console.log(`Users with maritalStatus: ${fetchedUsers.filter(u => u.maritalStatus).length}`);
+          console.log(`Users with nationality: ${fetchedUsers.filter(u => u.nationality).length}`);
+          console.log(`Users with patternOfSalaah: ${fetchedUsers.filter(u => u.patternOfSalaah).length}`);
+          console.log(`Users with summary: ${fetchedUsers.filter(u => u.summary).length}`);
+        }
+        
         setUsers(fetchedUsers);
       } catch (err) {
         console.error("Failed to fetch browse users:", err);

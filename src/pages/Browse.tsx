@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -102,6 +103,16 @@ const Browse = () => {
     return age;
   };
 
+  // Format any JSON string fields
+  const parseJsonField = (jsonString: string | null | undefined) => {
+    if (!jsonString) return null;
+    try {
+      return JSON.parse(jsonString);
+    } catch (e) {
+      return jsonString;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -118,7 +129,7 @@ const Browse = () => {
               <div className="relative">
                 <div className="h-96 bg-gray-100 flex items-center justify-center">
                   <ProfileImage
-                    src=""
+                    src={currentUser?.profile_pic || ""}
                     alt={`${currentUser?.fname || ''} ${currentUser?.lname || ''}`}
                     fallback={(currentUser?.fname?.charAt(0) || "") + (currentUser?.lname?.charAt(0) || "")}
                     size="xl"
@@ -159,7 +170,30 @@ const Browse = () => {
                       )}
                       {currentUser?.ethnicity && (
                         <div>
-                          <span className="text-muted-foreground">Ethnicity:</span> {currentUser.ethnicity}
+                          <span className="text-muted-foreground">Ethnicity:</span> {
+                            Array.isArray(parseJsonField(currentUser.ethnicity)) 
+                              ? parseJsonField(currentUser.ethnicity).join(", ") 
+                              : currentUser.ethnicity
+                          }
+                        </div>
+                      )}
+                      {currentUser?.region && (
+                        <div>
+                          <span className="text-muted-foreground">Region:</span> {currentUser.region}
+                        </div>
+                      )}
+                      {currentUser?.revert && (
+                        <div>
+                          <span className="text-muted-foreground">Revert:</span> {currentUser.revert}
+                        </div>
+                      )}
+                      {currentUser?.traits && (
+                        <div>
+                          <span className="text-muted-foreground">Traits:</span> {
+                            Array.isArray(parseJsonField(currentUser.traits)) 
+                              ? parseJsonField(currentUser.traits).join(", ") 
+                              : currentUser.traits
+                          }
                         </div>
                       )}
                     </div>
@@ -176,6 +210,13 @@ const Browse = () => {
                     <div>
                       <h4 className="font-medium">Religious Practice</h4>
                       <p className="text-sm text-muted-foreground">Pattern of Salaah: {currentUser.patternOfSalaah}</p>
+                    </div>
+                  )}
+                  
+                  {currentUser?.scholarsSpeakers && (
+                    <div>
+                      <h4 className="font-medium">Scholars & Speakers</h4>
+                      <p className="text-sm text-muted-foreground">{currentUser.scholarsSpeakers}</p>
                     </div>
                   )}
                 </div>

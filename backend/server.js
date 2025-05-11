@@ -65,54 +65,60 @@ const PORT = process.env.PORT || 5000;
     // Fetch and log all users after connecting to the database
     console.log('Fetching all users from database...');
     const users = await User.find().select('-password');
-    console.log('All users in database:');
-    console.log(JSON.stringify(users, null, 2));
     console.log(`Total users: ${users.length}`);
     
-    // Get a sample user for detailed logging
-    if (users.length > 0) {
-      const sampleUserId = users[0]._id;
-      console.log(`\n\nDetailed data for user ID: ${sampleUserId}`);
+    // Get detailed data for 3 users
+    console.log('\n==========================================');
+    console.log('DETAILED USER DATA FOR 3 SAMPLE USERS');
+    console.log('==========================================\n');
+    
+    // Fetch 3 random users for detailed logging
+    const sampleUsers = await User.find().limit(3).select('-password');
+    
+    for (const user of sampleUsers) {
+      const userId = user._id;
+      console.log(`\n\n==========================================`);
+      console.log(`DETAILED DATA FOR USER ID: ${userId}`);
+      console.log(`==========================================`);
       
       // Fetch user data
-      const userData = await User.findById(sampleUserId).select('-password');
       console.log('\nUser Data:');
-      console.log(JSON.stringify(userData, null, 2));
+      console.log(JSON.stringify(user, null, 2));
       
       // Fetch chat data for this user
       const chatData = await Chat.find({
         $or: [
-          { senderId: sampleUserId },
-          { receiverId: sampleUserId }
+          { senderId: userId.toString() },
+          { receiverId: userId.toString() }
         ]
-      }).limit(10);
+      });
       console.log('\nChat Data:');
       console.log(JSON.stringify(chatData, null, 2));
       
       // Fetch relationship data
       const relationshipData = await Relationship.find({
         $or: [
-          { follower_user_id: sampleUserId.toString() },
-          { followed_user_id: sampleUserId.toString() }
+          { follower_user_id: userId.toString() },
+          { followed_user_id: userId.toString() }
         ]
-      }).limit(10);
+      });
       console.log('\nRelationship Data:');
       console.log(JSON.stringify(relationshipData, null, 2));
       
       // Fetch activity log data
       const activityLogData = await UserActivityLog.find({
         $or: [
-          { userId: sampleUserId.toString() },
-          { receiverId: sampleUserId.toString() }
+          { userId: userId.toString() },
+          { receiverId: userId.toString() }
         ]
-      }).limit(10);
+      });
       console.log('\nUser Activity Log Data:');
       console.log(JSON.stringify(activityLogData, null, 2));
       
       // Fetch wali chat data
       const waliChatData = await WaliChat.find({
-        wardid: sampleUserId
-      }).limit(10);
+        wardid: userId.toString()
+      });
       console.log('\nWali Chat Data:');
       console.log(JSON.stringify(waliChatData, null, 2));
     }
