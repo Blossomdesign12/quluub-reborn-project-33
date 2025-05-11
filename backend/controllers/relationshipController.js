@@ -202,3 +202,43 @@ exports.getMatches = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// @desc    Get pending connection requests for a user
+// @route   GET /api/relationships/pending
+// @access  Private
+exports.getPendingRequests = async (req, res) => {
+  try {
+    const userId = req.user._id.toString();
+    
+    console.log(`Getting pending requests for user: ${userId}`);
+    
+    // Find all pending relationships where user is being followed
+    const relationships = await Relationship.find({
+      followed_user_id: userId,
+      status: 'pending'
+    });
+    
+    console.log(`Found ${relationships.length} pending relationship requests`);
+    
+    // Get array of follower user IDs
+    const followerUserIds = relationships.map(rel => rel.follower_user_id);
+    
+    // Get user details for followers
+    const requestUsers = await User.find({
+      _id: { $in: followerUserIds }
+    }).select('-password');
+    
+    console.log(`Found ${requestUsers.length} requesting users`);
+    
+    res.json({
+      count: requestUsers.length,
+      requests: requestUsers.map(user => ({
+        ...user._doc,
+        relationship: relationships.find(rel => rel.follower_user_id === user._id.toString())
+      }))
+    });
+  } catch (error) {
+    console.error("Get pending requests error:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

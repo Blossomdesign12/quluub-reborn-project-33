@@ -101,13 +101,14 @@ export const userService = {
     return response.data;
   },
   
-  getBrowseUsers: async (params: { country?: string, nationality?: string, limit?: number, showAll?: boolean } = {}): Promise<User[]> => {
+  getBrowseUsers: async (params: { country?: string, nationality?: string, limit?: number, showAll?: boolean, page?: number } = {}): Promise<User[]> => {
     // Build the query string from params
     const queryParams = new URLSearchParams();
     if (params.country) queryParams.append('country', params.country);
     if (params.nationality) queryParams.append('nationality', params.nationality);
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.showAll) queryParams.append('showAll', 'true');
+    if (params.page) queryParams.append('page', params.page.toString());
     
     const queryString = queryParams.toString();
     const url = `/users/browse${queryString ? `?${queryString}` : ''}`;
@@ -140,6 +141,12 @@ export const relationshipService = {
   getMatches: async (): Promise<any> => {
     const response = await apiClient.get('/relationships/matches');
     console.log("Matches API response:", response.data);
+    return response.data;
+  },
+  
+  getPendingRequests: async (): Promise<any> => {
+    const response = await apiClient.get('/relationships/pending');
+    console.log("Pending requests API response:", response.data);
     return response.data;
   },
 };

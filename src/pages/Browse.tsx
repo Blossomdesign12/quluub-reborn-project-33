@@ -3,24 +3,30 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, X, ChevronUp, ChevronDown, Send } from "lucide-react";
+import { Heart, X, ChevronLeft, ChevronRight, Send, UserPlus } from "lucide-react";
 import ProfileImage from "@/components/ProfileImage";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 const Browse = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [usersPerPage] = useState(4); // Show 4 users per page
   const [loading, setLoading] = useState(true);
   const [processingAction, setProcessingAction] = useState(false);
-  const [expandDetails, setExpandDetails] = useState(false);
+  const [pendingConnections, setPendingConnections] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Get current user
-  const currentUser = users[currentIndex];
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,6 +36,7 @@ const Browse = () => {
         console.log("Browse users:", fetchedUsers);
         if (fetchedUsers && fetchedUsers.length > 0) {
           setUsers(fetchedUsers);
+          setTotalPages(Math.ceil(fetchedUsers.length / usersPerPage));
         } else {
           // If no users found, show toast
           toast({
@@ -51,22 +58,20 @@ const Browse = () => {
     };
 
     fetchUsers();
-  }, [toast]);
+  }, [toast, usersPerPage]);
 
-  const handleLike = async () => {
-    if (!currentUser || processingAction) return;
+  const handleLike = async (userId: string) => {
+    if (processingAction) return;
     
     try {
       setProcessingAction(true);
-      console.log("Sending request to user ID:", currentUser._id);
-      await relationshipService.sendRequest(currentUser._id!);
+      console.log("Sending request to user ID:", userId);
+      await relationshipService.sendRequest(userId);
+      setPendingConnections(prev => [...prev, userId]);
       toast({
         title: "Success",
         description: "You have expressed interest in this person",
       });
-      
-      // Move to next user
-      goToNextUser();
     } catch (error) {
       console.error("Failed to send like:", error);
       const errorMessage = (error as any)?.response?.data?.message || "Failed to express interest";
@@ -81,28 +86,34 @@ const Browse = () => {
     }
   };
 
-  const handleSkip = () => {
-    if (processingAction) return;
-    goToNextUser();
+  const handleSkip = (userId: string) => {
+    // In a real app, you might want to track skipped users
+    toast({
+      title: "Skipped",
+      description: "You've skipped this profile",
+    });
   };
 
-  const handleMessage = () => {
-    if (!currentUser || processingAction) return;
-    navigate(`/messages?userId=${currentUser._id}`);
+  const handleMessage = (userId: string) => {
+    navigate(`/messages?userId=${userId}`);
   };
 
-  const goToNextUser = () => {
-    if (currentIndex < users.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      // No more users to browse
-      toast({
-        title: "No more profiles",
-        description: "You've seen all available profiles",
-      });
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
     }
-    setExpandDetails(false);
   };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // Get current users
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
 
   // Calculate age from DOB
   const calculateAge = (dob: Date | string | undefined) => {
@@ -141,151 +152,84 @@ const Browse = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         ) : users.length > 0 ? (
-          <div className="max-w-xl mx-auto">
-            <Card className="overflow-hidden">
-              <div className="relative">
-                <div className="h-96 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                  <ProfileImage
-                    src=""
-                    alt={`${currentUser?.fname || ''} ${currentUser?.lname || ''}`}
-                    fallback={(currentUser?.fname?.charAt(0) || "") + (currentUser?.lname?.charAt(0) || "")}
-                    size="xl"
-                    className="h-32 w-32 text-3xl"
-                  />
-                </div>
-                
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-6 text-white">
-                  <h3 className="text-2xl font-bold">
-                    {currentUser?.fname} {currentUser?.lname}, {calculateAge(currentUser?.dob)}
-                  </h3>
-                  <p>{currentUser?.country || "Location not specified"}</p>
-                </div>
-              </div>
-              
-              <CardContent className={`p-4 transition-all duration-300 ${expandDetails ? 'max-h-96 overflow-y-auto' : 'max-h-40 overflow-hidden'}`}>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium">About Me</h4>
-                    <p className="text-sm text-muted-foreground">{currentUser?.summary || "No summary provided"}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium">Basics</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Marital Status:</span> {currentUser?.maritalStatus || "Not specified"}
-                      </div>
-                      {currentUser?.noOfChildren && (
-                        <div>
-                          <span className="text-muted-foreground">Children:</span> {currentUser.noOfChildren}
-                        </div>
-                      )}
-                      {currentUser?.nationality && (
-                        <div>
-                          <span className="text-muted-foreground">Nationality:</span> {currentUser.nationality}
-                        </div>
-                      )}
-                      {currentUser?.ethnicity && (
-                        <div>
-                          <span className="text-muted-foreground">Ethnicity:</span> {
-                            Array.isArray(parseJsonField(currentUser.ethnicity)) 
-                              ? parseJsonField(currentUser.ethnicity).join(", ") 
-                              : currentUser.ethnicity
-                          }
-                        </div>
-                      )}
-                      {currentUser?.region && (
-                        <div>
-                          <span className="text-muted-foreground">Region:</span> {currentUser.region}
-                        </div>
-                      )}
-                      {currentUser?.revert && (
-                        <div>
-                          <span className="text-muted-foreground">Revert:</span> {currentUser.revert}
-                        </div>
-                      )}
-                      {currentUser?.traits && (
-                        <div>
-                          <span className="text-muted-foreground">Traits:</span> {
-                            Array.isArray(parseJsonField(currentUser.traits)) 
-                              ? parseJsonField(currentUser.traits).join(", ") 
-                              : currentUser.traits
-                          }
-                        </div>
-                      )}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              {currentUsers.map(user => (
+                <Card key={user._id} className="overflow-hidden">
+                  <div className="relative h-48">
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                      <ProfileImage
+                        src=""
+                        alt={`${user.fname || ''} ${user.lname || ''}`}
+                        fallback={(user.fname?.charAt(0) || "") + (user.lname?.charAt(0) || "")}
+                        size="lg"
+                        className="h-20 w-20 text-2xl"
+                      />
+                    </div>
+                    
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
+                      <h3 className="text-lg font-bold">
+                        {user.fname} {user.lname}, {calculateAge(user.dob)}
+                      </h3>
+                      <p className="text-xs">{user.country || "Location not specified"}</p>
                     </div>
                   </div>
                   
-                  {currentUser?.workEducation && (
-                    <div>
-                      <h4 className="font-medium">Work & Education</h4>
-                      <p className="text-sm text-muted-foreground">{currentUser.workEducation}</p>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 rounded-full"
+                        onClick={() => handleSkip(user._id!)}
+                        disabled={processingAction}
+                      >
+                        <X className="h-5 w-5 text-red-500" />
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 rounded-full"
+                        onClick={() => handleLike(user._id!)}
+                        disabled={processingAction || pendingConnections.includes(user._id!)}
+                      >
+                        {pendingConnections.includes(user._id!) ? (
+                          <UserPlus className="h-5 w-5 text-amber-500" />
+                        ) : (
+                          <Heart className="h-5 w-5 text-green-500" />
+                        )}
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 rounded-full"
+                        onClick={() => handleMessage(user._id!)}
+                        disabled={processingAction}
+                      >
+                        <Send className="h-5 w-5 text-purple-500" />
+                      </Button>
                     </div>
-                  )}
-                  
-                  {currentUser?.patternOfSalaah && (
-                    <div>
-                      <h4 className="font-medium">Religious Practice</h4>
-                      <p className="text-sm text-muted-foreground">Pattern of Salaah: {currentUser.patternOfSalaah}</p>
-                    </div>
-                  )}
-                  
-                  {currentUser?.scholarsSpeakers && (
-                    <div>
-                      <h4 className="font-medium">Scholars & Speakers</h4>
-                      <p className="text-sm text-muted-foreground">{currentUser.scholarsSpeakers}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              
-              <div className="p-4 border-t flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setExpandDetails(!expandDetails)}
-                  className="text-muted-foreground"
-                >
-                  {expandDetails ? <ChevronUp className="mr-1 h-4 w-4" /> : <ChevronDown className="mr-1 h-4 w-4" />}
-                  {expandDetails ? "Show less" : "Show more"}
-                </Button>
-              </div>
-              
-              <div className="p-4 border-t flex justify-center space-x-4">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-14 w-14 rounded-full"
-                  onClick={handleSkip}
-                  disabled={processingAction}
-                >
-                  <X className="h-6 w-6 text-red-500" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-14 w-14 rounded-full"
-                  onClick={handleLike}
-                  disabled={processingAction}
-                >
-                  <Heart className="h-6 w-6 text-green-500" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-14 w-14 rounded-full"
-                  onClick={handleMessage}
-                  disabled={processingAction}
-                >
-                  <Send className="h-6 w-6 text-purple-500" />
-                </Button>
-              </div>
-            </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
             
-            <p className="text-center text-muted-foreground mt-4">
-              {currentIndex + 1} of {users.length} profiles
-            </p>
-          </div>
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={goToPrevPage} disabled={currentPage === 1} />
+                </PaginationItem>
+                <PaginationItem className="flex items-center px-4">
+                  Page {currentPage} of {totalPages}
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext onClick={goToNextPage} disabled={currentPage === totalPages} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </>
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">

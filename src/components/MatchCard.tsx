@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Heart, X, MessageSquare, Send } from "lucide-react";
+import { Heart, X, MessageSquare, Send, UserPlus, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import ProfileImage from "@/components/ProfileImage";
 
@@ -19,6 +19,9 @@ interface MatchCardProps {
   onPass?: () => void;
   onChat?: () => void;
   onMessage?: () => void;
+  onConnect?: () => void;
+  isConnected?: boolean;
+  isPendingConnection?: boolean;
   userId?: string;
 }
 
@@ -36,6 +39,9 @@ const MatchCard = ({
   onPass,
   onChat,
   onMessage,
+  onConnect,
+  isConnected,
+  isPendingConnection,
   userId
 }: MatchCardProps) => {
   const generateInitials = (name: string) => {
@@ -85,65 +91,84 @@ const MatchCard = ({
           </div>
         )}
       </CardContent>
-      {(onLike || onPass || onChat || onMessage) && (
-        <CardFooter className="flex justify-center gap-4 p-4 pt-0">
-          {onPass && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 rounded-full border-2 hover:border-red-500 hover:bg-red-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPass();
-              }}
-            >
-              <X className="h-6 w-6 text-red-500" />
-            </Button>
-          )}
-          
-          {onLike && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 rounded-full border-2 hover:border-green-500 hover:bg-green-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLike();
-              }}
-            >
-              <Heart className="h-6 w-6 text-green-500" />
-            </Button>
-          )}
-          
-          {onChat && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 rounded-full border-2 hover:border-blue-500 hover:bg-blue-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChat();
-              }}
-            >
-              <MessageSquare className="h-6 w-6 text-blue-500" />
-            </Button>
-          )}
-          
-          {onMessage && (
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-12 w-12 rounded-full border-2 hover:border-purple-500 hover:bg-purple-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMessage();
-              }}
-            >
-              <Send className="h-6 w-6 text-purple-500" />
-            </Button>
-          )}
-        </CardFooter>
-      )}
+      <CardFooter className="flex justify-center gap-4 p-4 pt-0">
+        {onPass && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full border-2 hover:border-red-500 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPass();
+            }}
+          >
+            <X className="h-6 w-6 text-red-500" />
+          </Button>
+        )}
+        
+        {onLike && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full border-2 hover:border-green-500 hover:bg-green-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLike();
+            }}
+          >
+            <Heart className="h-6 w-6 text-green-500" />
+          </Button>
+        )}
+        
+        {onConnect && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full border-2 hover:border-blue-500 hover:bg-blue-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onConnect();
+            }}
+            disabled={isConnected || isPendingConnection}
+          >
+            {isConnected ? (
+              <Check className="h-6 w-6 text-green-500" />
+            ) : isPendingConnection ? (
+              <UserPlus className="h-6 w-6 text-amber-500" />
+            ) : (
+              <UserPlus className="h-6 w-6 text-blue-500" />
+            )}
+          </Button>
+        )}
+        
+        {onChat && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full border-2 hover:border-blue-500 hover:bg-blue-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChat();
+            }}
+          >
+            <MessageSquare className="h-6 w-6 text-blue-500" />
+          </Button>
+        )}
+        
+        {onMessage && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-12 w-12 rounded-full border-2 hover:border-purple-500 hover:bg-purple-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMessage();
+            }}
+          >
+            <Send className="h-6 w-6 text-purple-500" />
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 };

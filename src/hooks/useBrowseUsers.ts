@@ -8,13 +8,16 @@ interface UseBrowseUsersParams {
   country?: string;
   nationality?: string;
   limit?: number;
-  showAll?: boolean; // Add a new parameter to show all users
+  showAll?: boolean;
+  page?: number; // Add pagination support
 }
 
 export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(params.page || 1);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -35,6 +38,9 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
           console.log(`Users with nationality: ${fetchedUsers.filter(u => u.nationality).length}`);
           console.log(`Users with patternOfSalaah: ${fetchedUsers.filter(u => u.patternOfSalaah).length}`);
           console.log(`Users with summary: ${fetchedUsers.filter(u => u.summary).length}`);
+          
+          // Calculate total pages (assuming we display 4 users per page)
+          setTotalPages(Math.ceil(fetchedUsers.length / 4));
         } else {
           console.log("No users fetched or empty users array");
         }
@@ -54,7 +60,21 @@ export const useBrowseUsers = (params: UseBrowseUsersParams = {}) => {
     };
 
     fetchUsers();
-  }, [params.country, params.nationality, params.limit, toast]);
+  }, [params.country, params.nationality, params.limit, params.page, toast]);
 
-  return { users, isLoading, error };
+  // Function to navigate to specific page
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  return { 
+    users, 
+    isLoading, 
+    error, 
+    totalPages, 
+    currentPage, 
+    goToPage 
+  };
 };
