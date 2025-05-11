@@ -26,7 +26,16 @@ const Browse = () => {
         setLoading(true);
         const fetchedUsers = await userService.getBrowseUsers();
         console.log("Browse users:", fetchedUsers);
-        setUsers(fetchedUsers);
+        if (fetchedUsers && fetchedUsers.length > 0) {
+          setUsers(fetchedUsers);
+        } else {
+          // If no users found, show toast
+          toast({
+            title: "No users found",
+            description: "No potential matches were found at this time.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch browse users:", error);
         toast({
@@ -47,6 +56,7 @@ const Browse = () => {
     
     try {
       setProcessingAction(true);
+      console.log("Sending request to user ID:", currentUser._id);
       await relationshipService.sendRequest(currentUser._id!);
       toast({
         title: "Success",

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -14,82 +14,124 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
+import { useBrowseUsers } from "@/hooks/useBrowseUsers";
+import { relationshipService } from "@/lib/api-client";
+import { useToast } from "@/components/ui/use-toast";
+import { User } from "@/types/user";
 
 const Search = () => {
   const [ageRange, setAgeRange] = useState([18, 60]);
   const [heightRange, setHeightRange] = useState([150, 200]); // In cm
   const [weightRange, setWeightRange] = useState([30, 125]); // In kg
   const [location, setLocation] = useState("anywhere");
+  const [nationality, setNationality] = useState("any");
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
+  const [showHijabOnly, setShowHijabOnly] = useState(false);
+  const [showBeardOnly, setShowBeardOnly] = useState(false);
   
-  // Mock search results - in a real app, would be filtered based on criteria
-  const searchResults = [
-    {
-      id: "1",
-      name: "Aisha",
-      age: 28,
-      location: "New York, NY",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 85,
-      tags: ["Medical Professional", "Practicing", "Ready for Marriage"],
-      connectionSent: false,
-      connectionAccepted: false
-    },
-    {
-      id: "2",
-      name: "Yusuf",
-      age: 30,
-      location: "Chicago, IL",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 78,
-      tags: ["Engineer", "Practicing", "Family-oriented"],
-      connectionSent: true,
-      connectionAccepted: true
-    },
-    {
-      id: "3",
-      name: "Fatima",
-      age: 26,
-      location: "Houston, TX",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 92,
-      tags: ["Teacher", "Very Religious", "Arabic Speaker"],
-      connectionSent: true,
-      connectionAccepted: false
-    },
-    {
-      id: "4",
-      name: "Ahmad",
-      age: 29,
-      location: "Seattle, WA",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 70,
-      tags: ["Business Owner", "Moderate", "Loves Travel"],
-      connectionSent: false,
-      connectionAccepted: false
-    },
-    {
-      id: "5",
-      name: "Zahra",
-      age: 31,
-      location: "Denver, CO",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 81,
-      tags: ["Healthcare", "Hijabi", "Family First"],
-      connectionSent: false,
-      connectionAccepted: false
-    },
-    {
-      id: "6",
-      name: "Omar",
-      age: 27,
-      location: "Austin, TX",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      matchPercentage: 88,
-      tags: ["Tech Professional", "Practicing", "Arab"],
-      connectionSent: false,
-      connectionAccepted: false
-    },
-  ];
+  const { toast } = useToast();
+  
+  // Filter params for API
+  const [filterParams, setFilterParams] = useState<{
+    country?: string;
+    nationality?: string;
+  }>({});
+  
+  // Use the hook to fetch users
+  const { users, isLoading, error } = useBrowseUsers(filterParams);
+  
+  // State to track which users have pending connection requests
+  const [pendingConnections, setPendingConnections] = useState<string[]>([]);
+  
+  // Calculate age from DOB
+  const calculateAge = (dob: string | Date | undefined) => {
+    if (!dob) return null;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+  
+  // Extract tags/interests for display
+  const extractTags = (user: User) => {
+    const tags: string[] = [];
+    
+    if (user.workEducation) {
+      const workParts = user.workEducation.split(' ');
+      if (workParts.length > 0) tags.push(workParts[0]);
+    }
+    
+    if (user.patternOfSalaah) tags.push(user.patternOfSalaah === 'always' ? 'Practicing' : 'Moderate');
+    
+    if (user.maritalStatus) tags.push(user.maritalStatus);
+    
+    if (user.traits) {
+      try {
+        const traitsArray = JSON.parse(user.traits);
+        if (Array.isArray(traitsArray) && traitsArray.length > 0) {
+          tags.push(traitsArray[0]);
+        }
+      } catch (e) {
+        // If parsing fails, just use the string
+        if (typeof user.traits === 'string') tags.push(user.traits);
+      }
+    }
+    
+    return tags.slice(0, 3); // Return up to 3 tags
+  };
+  
+  const handleApplyFilters = () => {
+    setIsApplyingFilters(true);
+    
+    const params: { country?: string; nationality?: string } = {};
+    
+    // Add country filter if selected
+    if (location !== "anywhere") {
+      // Convert location selection to country name
+      // This would need a proper mapping in a real app
+      params.country = location === "anywhere" ? undefined : location;
+    }
+    
+    // Add nationality filter if selected
+    if (nationality !== "any") {
+      params.nationality = nationality;
+    }
+    
+    setFilterParams(params);
+    setIsApplyingFilters(false);
+  };
+  
+  const handleSendInterest = async (userId: string) => {
+    try {
+      await relationshipService.sendRequest(userId);
+      setPendingConnections(prev => [...prev, userId]);
+      toast({
+        title: "Interest Sent",
+        description: "Your interest has been sent successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to send interest:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send interest. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handlePass = (userId: string) => {
+    // In a real app, you might want to track passed users
+    toast({
+      title: "Passed",
+      description: "You've passed on this profile.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -155,35 +197,38 @@ const Search = () => {
                 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Location</label>
-                  <Select defaultValue="anywhere" onValueChange={setLocation}>
+                  <Select value={location} onValueChange={setLocation}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="anywhere">Anywhere</SelectItem>
-                      <SelectItem value="nearby">Within 25 miles</SelectItem>
-                      <SelectItem value="local">Within 50 miles</SelectItem>
-                      <SelectItem value="regional">Within 100 miles</SelectItem>
+                      <SelectItem value="Nigeria">Nigeria</SelectItem>
+                      <SelectItem value="Ghana">Ghana</SelectItem>
+                      <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
+                      <SelectItem value="United States">United States</SelectItem>
+                      <SelectItem value="United Kingdom">United Kingdom</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Nationality</label>
-                  <Select defaultValue="any">
+                  <Select value={nationality} onValueChange={setNationality}>
                     <SelectTrigger>
                       <SelectValue placeholder="Any nationality" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="any">Any nationality</SelectItem>
-                      <SelectItem value="saudi">Saudi</SelectItem>
-                      <SelectItem value="egyptian">Egyptian</SelectItem>
-                      <SelectItem value="jordanian">Jordanian</SelectItem>
-                      <SelectItem value="pakistani">Pakistani</SelectItem>
-                      <SelectItem value="indian">Indian</SelectItem>
-                      <SelectItem value="malaysian">Malaysian</SelectItem>
-                      <SelectItem value="indonesian">Indonesian</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="Nigerian">Nigerian</SelectItem>
+                      <SelectItem value="Ghanaian">Ghanaian</SelectItem>
+                      <SelectItem value="Saudi">Saudi</SelectItem>
+                      <SelectItem value="Egyptian">Egyptian</SelectItem>
+                      <SelectItem value="Jordanian">Jordanian</SelectItem>
+                      <SelectItem value="Pakistani">Pakistani</SelectItem>
+                      <SelectItem value="Indian">Indian</SelectItem>
+                      <SelectItem value="Malaysian">Malaysian</SelectItem>
+                      <SelectItem value="Indonesian">Indonesian</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -199,6 +244,7 @@ const Search = () => {
                       <SelectItem value="single">Single</SelectItem>
                       <SelectItem value="divorced">Divorced</SelectItem>
                       <SelectItem value="widowed">Widowed</SelectItem>
+                      <SelectItem value="married">Married</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -224,7 +270,11 @@ const Search = () => {
                     <Label htmlFor="hijab" className="text-sm font-medium">Hijab</Label>
                     <p className="text-xs text-muted-foreground">Show only sisters who wear hijab</p>
                   </div>
-                  <Switch id="hijab" />
+                  <Switch 
+                    id="hijab" 
+                    checked={showHijabOnly} 
+                    onCheckedChange={setShowHijabOnly}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -232,10 +282,20 @@ const Search = () => {
                     <Label htmlFor="beard" className="text-sm font-medium">Beard</Label>
                     <p className="text-xs text-muted-foreground">Show only brothers with beard</p>
                   </div>
-                  <Switch id="beard" />
+                  <Switch 
+                    id="beard" 
+                    checked={showBeardOnly} 
+                    onCheckedChange={setShowBeardOnly}
+                  />
                 </div>
                 
-                <Button className="w-full">Apply Filters</Button>
+                <Button 
+                  className="w-full" 
+                  onClick={handleApplyFilters}
+                  disabled={isApplyingFilters}
+                >
+                  {isApplyingFilters ? 'Applying...' : 'Apply Filters'}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -244,19 +304,51 @@ const Search = () => {
           <div className="md:col-span-3">
             <h1 className="text-2xl font-bold mb-6">Potential Spouses</h1>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {searchResults.map((result) => (
-                <MatchCard 
-                  key={result.id}
-                  name={result.name}
-                  age={result.age}
-                  location={result.location}
-                  photoUrl={result.photoUrl}
-                  matchPercentage={result.matchPercentage}
-                  tags={result.tags}
-                />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            ) : error ? (
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-red-500">Error loading users. Please try again.</p>
+                </CardContent>
+              </Card>
+            ) : users.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {users.map((user) => {
+                  const age = calculateAge(user.dob) || 0;
+                  
+                  // Apply client-side filtering based on age
+                  if (age < ageRange[0] || age > ageRange[1]) {
+                    return null;
+                  }
+                  
+                  // Skip based on hijab/beard preferences if set
+                  // This would need real data fields in the user object
+                  
+                  return (
+                    <MatchCard 
+                      key={user._id}
+                      name={`${user.fname} ${user.lname}`}
+                      age={age}
+                      location={user.country || "Location not specified"}
+                      photoUrl={user.profile_pic || ""}
+                      matchPercentage={Math.floor(Math.random() * 30) + 70} // Placeholder for now
+                      tags={extractTags(user)}
+                      onLike={() => handleSendInterest(user._id!)}
+                      onPass={() => handlePass(user._id!)}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-muted-foreground">No users match your current filters. Try adjusting your criteria.</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

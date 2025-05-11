@@ -12,6 +12,8 @@ exports.sendRequest = async (req, res) => {
     const { followedUserId } = req.body;
     const followerUserId = req.user._id.toString();
     
+    console.log(`Sending request: follower=${followerUserId}, followed=${followedUserId}`);
+    
     // Check if user is trying to follow themselves
     if (followerUserId === followedUserId) {
       return res.status(400).json({ message: "You cannot follow yourself" });
@@ -44,6 +46,7 @@ exports.sendRequest = async (req, res) => {
     });
     
     await relationship.save();
+    console.log("Relationship created:", relationship);
     
     // Log the activity
     await UserActivityLog.create({
@@ -54,7 +57,7 @@ exports.sendRequest = async (req, res) => {
     
     res.status(201).json(relationship);
   } catch (error) {
-    console.error(error);
+    console.error("Send request error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -66,6 +69,8 @@ exports.respondToRequest = async (req, res) => {
   try {
     const { status } = req.body;
     const relationshipId = req.params.id;
+    
+    console.log(`Responding to request: relationship=${relationshipId}, status=${status}`);
     
     if (!['rejected', 'matched'].includes(status)) {
       return res.status(400).json({ message: "Invalid status. Must be 'rejected' or 'matched'" });
@@ -91,6 +96,7 @@ exports.respondToRequest = async (req, res) => {
     // Update status
     relationship.status = status;
     await relationship.save();
+    console.log("Relationship updated:", relationship);
     
     // Log the activity
     await UserActivityLog.create({
@@ -101,7 +107,7 @@ exports.respondToRequest = async (req, res) => {
     
     res.json(relationship);
   } catch (error) {
-    console.error(error);
+    console.error("Respond to request error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -112,6 +118,8 @@ exports.respondToRequest = async (req, res) => {
 exports.withdrawRequest = async (req, res) => {
   try {
     const relationshipId = req.params.id;
+    
+    console.log(`Withdrawing request: relationship=${relationshipId}`);
     
     // Find relationship
     const relationship = await Relationship.findOne({ id: relationshipId });
@@ -131,7 +139,8 @@ exports.withdrawRequest = async (req, res) => {
     }
     
     // Delete relationship
-    await relationship.remove();
+    await Relationship.deleteOne({ id: relationshipId });
+    console.log("Relationship deleted");
     
     // Log the activity
     await UserActivityLog.create({
@@ -142,7 +151,7 @@ exports.withdrawRequest = async (req, res) => {
     
     res.json({ message: "Request withdrawn successfully" });
   } catch (error) {
-    console.error(error);
+    console.error("Withdraw request error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -154,6 +163,8 @@ exports.getMatches = async (req, res) => {
   try {
     const userId = req.user._id.toString();
     
+    console.log(`Getting matches for user: ${userId}`);
+    
     // Find all matched relationships where user is follower or followed
     const relationships = await Relationship.find({
       $or: [
@@ -162,6 +173,8 @@ exports.getMatches = async (req, res) => {
       ],
       status: 'matched'
     });
+    
+    console.log(`Found ${relationships.length} match relationships`);
     
     // Get array of matched user IDs
     const matchedUserIds = relationships.map(rel => {
@@ -173,6 +186,8 @@ exports.getMatches = async (req, res) => {
       _id: { $in: matchedUserIds }
     }).select('-password');
     
+    console.log(`Found ${matches.length} matched users`);
+    
     res.json({
       count: matches.length,
       matches: matches.map(match => ({
@@ -183,7 +198,7 @@ exports.getMatches = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error(error);
+    console.error("Get matches error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

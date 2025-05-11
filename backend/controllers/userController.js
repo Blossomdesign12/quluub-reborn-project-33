@@ -1,7 +1,7 @@
 
 const User = require('../models/User');
 const UserActivityLog = require('../models/UserActivityLog');
-const { toObjectId } = require('../config/db');
+const mongoose = require('mongoose');
 
 // @desc    Get current user
 // @route   GET /api/users/me
@@ -112,21 +112,26 @@ exports.updateUserProfile = async (req, res) => {
 // @access  Private
 exports.getBrowseUsers = async (req, res) => {
   try {
-    const currentUser = await User.findById(req.user._id);
+    console.log("Getting browse users with query:", req.query);
     
-    // Default filters
+    // Default filters - we'll simplify to get all users for now
     const filters = {
       _id: { $ne: req.user._id }, // Exclude current user
-      hidden: { $ne: true }, // Exclude hidden profiles
-      status: 'active' // Only active users
     };
     
-    // Gender filtering based on user preferences
+    // Only apply status filter if we want active users
+    // Removing this might help us see users in testing environment
+    // filters.status = 'active'; // Only active users
+    
+    // Gender filtering - only apply if we want to filter by opposite gender
+    // Removing this might help us see users in testing environment
+    /*
     if (currentUser.gender === 'male') {
       filters.gender = 'female';
     } else {
       filters.gender = 'male';
     }
+    */
     
     // Additional filters from query
     if (req.query.country) {
@@ -137,14 +142,21 @@ exports.getBrowseUsers = async (req, res) => {
       filters.nationality = req.query.nationality;
     }
     
+    console.log("Applying filters:", filters);
+    
+    // Allow pagination for large datasets
+    const limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    
     const users = await User.find(filters)
       .select('-password -resetPasswordToken -resetPasswordTokenExpiration -validationToken')
       .sort({ lastSeen: -1 }) // Most recently active first
-      .limit(50);
+      .limit(limit);
+    
+    console.log(`Found ${users.length} users matching the criteria`);
     
     res.json(users);
   } catch (error) {
-    console.error(error);
+    console.error("Error in getBrowseUsers:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

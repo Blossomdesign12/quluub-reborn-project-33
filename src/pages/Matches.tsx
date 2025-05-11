@@ -6,6 +6,7 @@ import MatchCard from "@/components/MatchCard";
 import { relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
+import { useNavigate } from "react-router-dom";
 
 interface MatchesResponse {
   count: number;
@@ -22,6 +23,7 @@ const Matches = () => {
   const [matches, setMatches] = useState<MatchesResponse["matches"]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -81,14 +83,32 @@ const Matches = () => {
     if (user.patternOfSalaah) tags.push(user.patternOfSalaah);
     if (user.nationality) tags.push(user.nationality);
     
+    // Try to extract traits if they exist
+    if (user.traits) {
+      try {
+        const traitsArray = JSON.parse(user.traits);
+        if (Array.isArray(traitsArray) && traitsArray.length > 0) {
+          tags.push(traitsArray[0]);
+        }
+      } catch (e) {
+        // If parsing fails, just use the string
+        if (typeof user.traits === 'string') tags.push(user.traits);
+      }
+    }
+    
     return tags.filter(Boolean).slice(0, 3);
+  };
+  
+  // Handle clicking on a match to start messaging
+  const handleStartChat = (userId: string) => {
+    navigate(`/messages?userId=${userId}`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="container py-6">
-        <h1 className="text-2xl font-bold mb-6">Your Potential Spouses</h1>
+        <h1 className="text-2xl font-bold mb-6">Your Matched Spouses</h1>
         
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -97,15 +117,17 @@ const Matches = () => {
         ) : matches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {matches.map((match) => (
-              <MatchCard 
-                key={match._id}
-                name={`${match.fname} ${match.lname}`}
-                age={calculateAge(match.dob) || 0}
-                location={match.country || "Location not specified"}
-                photoUrl="" // We'll need to implement profile photos later
-                matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
-                tags={extractInterests(match)}
-              />
+              <div key={match._id} onClick={() => handleStartChat(match._id!)} className="cursor-pointer">
+                <MatchCard 
+                  name={`${match.fname} ${match.lname}`}
+                  age={calculateAge(match.dob) || 0}
+                  location={match.country || "Location not specified"}
+                  photoUrl={match.profile_pic || ""} 
+                  matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
+                  tags={extractInterests(match)}
+                  bio="Click to start chatting"
+                />
+              </div>
             ))}
           </div>
         ) : (
