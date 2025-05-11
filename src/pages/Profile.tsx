@@ -1,484 +1,155 @@
 
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import ProfileHeader from "@/components/ProfileHeader";
+import ProfileInfo from "@/components/ProfileInfo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import ProfileEditForm from "@/components/ProfileEditForm";
-import { 
-  Heart, 
-  MessageCircle, 
-  Share, 
-  Edit,
-  User,
-  Church,
-  MapPin,
-  Shirt,
-  Leaf,
-  Star,
-  Link2,
-  Briefcase
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { userService } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+import { User } from "@/types/user";
 
 const Profile = () => {
-  // In a real app, this would come from an API or context
-  const [profileData, setProfileData] = useState({
-    name: "Aisha",
-    age: 28,
-    location: "New York, NY",
-    photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-    bio: "Assalamualaikum! Medical resident passionate about healthcare and community service. I enjoy reading, hiking, and exploring new cuisines in my free time. Looking for someone who values family and faith.",
-    summary: "Medical professional seeking compatible partner who values faith and family",
-    faith: {
-      practice: "Practicing",
-      prayFiveTimes: true,
-      hijab: "Always",
-      sect: "Sunni",
-      converted: false,
-      important: "Very important",
-      patternOfSalaah: "All five daily"
-    },
-    personal: {
-      ethnicity: "Arab",
-      nationality: "Egyptian",
-      country: "United States",
-      languages: ["English", "Arabic"],
-      maritalStatus: "Never Married",
-      hasChildren: false,
-      wantsChildren: "Yes",
-      education: "Doctorate",
-      occupation: "Medical Doctor",
-      relocate: "Yes, within my country",
-      workEducation: "Completed medical school at NYU. Currently in residency at Mount Sinai Hospital specializing in pediatrics.",
-      genotype: "AA"
-    },
-    appearance: {
-      height: "5'6\"",
-      build: "Average",
-      hijabStyle: "Traditional",
-      appearance: "Medium height with olive complexion and brown eyes"
-    },
-    lifestyle: {
-      smoke: "Never",
-      drink: "Never",
-      diet: "Halal only",
-      exercise: "Regular",
-    },
-    interests: ["Reading", "Hiking", "Cooking", "Charity Work", "Islamic Studies", "Travel"],
-    photos: [
-      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400",
-      "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&h=400",
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&h=400"
-    ],
-    lastSeen: new Date(),
-    favorites: [],
-    isOwnProfile: true,
-    compatibilityScore: 87
-  });
-
-  // Available categories for the profile sidebar
-  const categories = [
-    { id: "basic", label: "Basic Info", icon: <User className="h-5 w-5" /> },
-    { id: "deen", label: "Deen", icon: <Church className="h-5 w-5" /> },
-    { id: "location", label: "Location and Ethnicity", icon: <MapPin className="h-5 w-5" /> },
-    { id: "appearance", label: "Appearance", icon: <Shirt className="h-5 w-5" /> },
-    { id: "work", label: "Work and Education", icon: <Briefcase className="h-5 w-5" /> },
-    { id: "lifestyle", label: "Lifestyle and Traits", icon: <Leaf className="h-5 w-5" /> },
-    { id: "interests", label: "Interests", icon: <Star className="h-5 w-5" /> },
-    { id: "matching", label: "Matching Details", icon: <Link2 className="h-5 w-5" /> }
-  ];
-
-  // Active category state
-  const [activeCategory, setActiveCategory] = useState("basic");
-  // Edit mode toggle
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleSaveProfile = (updatedProfile) => {
-    setProfileData(updatedProfile);
-    setIsEditing(false);
+  const { user: currentUser } = useAuth();
+  const { userId } = useParams<{ userId: string }>();
+  const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  
+  // Determine if showing own profile or someone else's
+  const isOwnProfile = !userId || (currentUser?._id === userId);
+  const displayUserId = userId || currentUser?._id;
+  
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!displayUserId) return;
+      
+      try {
+        setLoading(true);
+        const userData = isOwnProfile
+          ? currentUser // Use current user data if viewing own profile
+          : await userService.getProfile(displayUserId);
+          
+        setProfileUser(userData || null);
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load user profile",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [displayUserId, isOwnProfile, currentUser, toast]);
+  
+  // Calculate age from DOB
+  const calculateAge = (dob: Date | string | undefined) => {
+    if (!dob) return null;
+    
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+  
+  // Extract user interests from various fields
+  const extractInterests = (user: User | null) => {
+    if (!user) return [];
+    
+    const interests: string[] = [];
+    
+    if (user.nationality) interests.push(user.nationality);
+    if (user.patternOfSalaah) interests.push(user.patternOfSalaah);
+    if (user.maritalStatus) interests.push(user.maritalStatus);
+    if (user.ethnicity && typeof user.ethnicity === 'string') {
+      try {
+        const ethnicities = JSON.parse(user.ethnicity);
+        if (Array.isArray(ethnicities)) {
+          interests.push(...ethnicities);
+        }
+      } catch (e) {
+        interests.push(user.ethnicity);
+      }
+    }
+    
+    return interests.filter(Boolean);
   };
 
-  // Format date for display
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container py-6 flex justify-center items-center h-[calc(100vh-100px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profileUser) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container py-6">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-lg text-muted-foreground">Profile not found</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="container max-w-7xl py-6">
-        {/* Profile header */}
-        <Card className="border-0 shadow-none mb-6">
-          <CardContent className="p-0">
-            <div className="relative">
-              <div className="h-40 md:h-60 w-full bg-gradient-to-b from-primary/20 to-primary/5 rounded-t-xl"></div>
-              <div className="absolute bottom-0 left-10 md:left-16 transform translate-y-1/2">
-                <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-white">
-                  <AvatarImage src={profileData.photoUrl} alt={profileData.name} />
-                  <AvatarFallback>{profileData.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </div>
-              
-              {!profileData.isOwnProfile && (
-                <div className="absolute right-4 top-4">
-                  <Badge className="bg-primary/80 hover:bg-primary text-white px-3 py-1.5">
-                    {profileData.compatibilityScore}% Compatible
-                  </Badge>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-16 md:mt-20 px-8 pb-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold">{profileData.name}, {profileData.age}</h1>
-                  <p className="text-muted-foreground">{profileData.location}</p>
-                  {profileData.lastSeen && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Last seen: {formatDate(profileData.lastSeen)}
-                    </p>
-                  )}
-                </div>
-                
-                <div className="flex mt-4 md:mt-0 space-x-2">
-                  {profileData.isOwnProfile ? (
-                    <Button 
-                      variant={isEditing ? "default" : "outline"}
-                      onClick={() => setIsEditing(!isEditing)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      {isEditing ? "Cancel Edit" : "Edit Profile"}
-                    </Button>
-                  ) : (
-                    <>
-                      <Button variant="outline" size="icon" className="rounded-full">
-                        <MessageCircle className="h-5 w-5" />
-                      </Button>
-                      <Button variant="default" className="rounded-full px-6">
-                        <Heart className="h-5 w-5 mr-2" />
-                        <span>Like</span>
-                      </Button>
-                      <Button variant="outline" size="icon" className="rounded-full">
-                        <Share className="h-5 w-5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="container py-6">
+        <ProfileHeader
+          name={`${profileUser.fname} ${profileUser.lname}`}
+          age={calculateAge(profileUser.dob) || 0}
+          location={profileUser.country || "Location not specified"}
+          photoUrl={profileUser.profile_pic || ""}
+          isOwnProfile={isOwnProfile}
+        />
         
-        {/* Profile edit form */}
-        {isEditing ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Your Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ProfileEditForm 
-                profileData={profileData} 
-                onSave={handleSaveProfile}
-                onCancel={() => setIsEditing(false)}
+        <div className="mt-6">
+          <Tabs defaultValue="about">
+            <TabsList className="mb-4">
+              <TabsTrigger value="about">About</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
+            </TabsList>
+            <TabsContent value="about">
+              <ProfileInfo
+                bio={profileUser.summary || "No summary provided"}
+                interests={extractInterests(profileUser)}
+                lookingFor={profileUser.maritalStatus || "Not specified"}
+                occupation={profileUser.workEducation?.split(',')[0] || undefined}
+                education={profileUser.workEducation?.includes('degree') ? profileUser.workEducation : undefined}
               />
-            </CardContent>
-          </Card>
-        ) : (
-          // Profile content with sidebar
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Sidebar */}
-            <div className="w-full md:w-64 bg-white rounded-lg shadow">
-              <div className="p-2">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-md transition-colors ${
-                      activeCategory === category.id
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "hover:bg-gray-100"
-                    }`}
-                    onClick={() => setActiveCategory(category.id)}
-                  >
-                    {category.icon}
-                    <span>{category.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            {/* Content area */}
-            <div className="flex-1">
-              {activeCategory === "basic" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">About Me</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {profileData.summary && (
-                      <div className="mb-4">
-                        <h4 className="font-medium text-sm mb-1">Summary</h4>
-                        <p className="text-muted-foreground">{profileData.summary}</p>
-                      </div>
-                    )}
-                    
-                    <p className="text-muted-foreground">{profileData.bio}</p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Marital Status</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.maritalStatus}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Has Children</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.hasChildren ? "Yes" : "No"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Wants Children</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.wantsChildren}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Genotype</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.genotype || "Not specified"}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "deen" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Faith & Religious Values</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Religious Practice</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.practice}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Pray Five Times</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.prayFiveTimes ? "Yes" : "No"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Pattern of Salaah</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.patternOfSalaah || "Not specified"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Wear Hijab</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.hijab}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Religious Sect</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.sect}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Converted to Islam</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.converted ? "Yes" : "No"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Faith is</span>
-                        <span className="text-sm text-muted-foreground">{profileData.faith.important}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "location" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Location & Ethnicity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Current Location</span>
-                        <span className="text-sm text-muted-foreground">{profileData.location}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Country of Residence</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.country || "Not specified"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Ethnicity</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.ethnicity}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Nationality</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.nationality || "Not specified"}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Languages</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.languages.join(", ")}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Willing to Relocate</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.relocate}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "appearance" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Appearance</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Height</span>
-                        <span className="text-sm text-muted-foreground">{profileData.appearance.height}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Build</span>
-                        <span className="text-sm text-muted-foreground">{profileData.appearance.build}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Hijab Style</span>
-                        <span className="text-sm text-muted-foreground">{profileData.appearance.hijabStyle}</span>
-                      </div>
-                    </div>
-                    
-                    {profileData.appearance.appearance && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium mb-2">Physical Appearance</h4>
-                        <p className="text-sm text-muted-foreground">{profileData.appearance.appearance}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "work" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Work & Education</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Occupation</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.occupation}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Education</span>
-                        <span className="text-sm text-muted-foreground">{profileData.personal.education}</span>
-                      </div>
-                    </div>
-                    
-                    {profileData.personal.workEducation && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-medium mb-2">Work & Education Details</h4>
-                        <p className="text-sm text-muted-foreground">{profileData.personal.workEducation}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "lifestyle" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Lifestyle & Traits</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Smoking</span>
-                        <span className="text-sm text-muted-foreground">{profileData.lifestyle.smoke}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Drinking</span>
-                        <span className="text-sm text-muted-foreground">{profileData.lifestyle.drink}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Diet</span>
-                        <span className="text-sm text-muted-foreground">{profileData.lifestyle.diet}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-sm font-medium">Exercise</span>
-                        <span className="text-sm text-muted-foreground">{profileData.lifestyle.exercise}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "interests" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Interests</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {profileData.interests.map((interest, index) => (
-                        <Badge 
-                          key={index} 
-                          variant="secondary"
-                          className="text-sm"
-                        >
-                          {interest}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {activeCategory === "matching" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Matching Preferences</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-muted-foreground">
-                      This section lets you specify your preferences for finding a compatible match.
-                    </p>
-                    <div className="bg-primary/5 p-4 rounded-md">
-                      <p className="text-sm text-center">
-                        Edit your profile to update matching preferences
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        )}
-      </main>
+            </TabsContent>
+            <TabsContent value="photos">
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">No photos available</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };

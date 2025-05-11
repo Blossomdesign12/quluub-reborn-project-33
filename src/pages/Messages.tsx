@@ -1,186 +1,248 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
+import { chatService } from "@/lib/api-client";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card } from "@/components/ui/card";
+
+interface Conversation {
+  _id: string;
+  lastMessage: {
+    message: string;
+    created: string;
+    status: string;
+  };
+  userDetails: {
+    username: string;
+    fname: string;
+    lname: string;
+    gender: string;
+    country: string;
+  };
+  unreadCount: number;
+}
+
+interface Message {
+  id: string;
+  _id: string;
+  content: string;
+  message: string;
+  senderId: string;
+  receiverId: string;
+  timestamp: string;
+  created: string;
+  status: string;
+}
 
 const Messages = () => {
-  // In a real app, this would come from an API or context
-  const currentUserId = "user1";
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sendingMessage, setSendingMessage] = useState(false);
   
-  const conversationsData = [
-    {
-      id: "conv1",
-      name: "Sarah",
-      photoUrl: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=150&h=150",
-      lastMessage: "Hey, how are you doing?",
-      timestamp: "10:30 AM",
-      unread: true,
-      messages: [
-        {
-          id: "msg1",
-          content: "Hey there! I saw you like photography too.",
-          senderId: "conv1",
-          timestamp: "10:15 AM"
-        },
-        {
-          id: "msg2",
-          content: "Yes! I love taking landscape photos when I travel.",
-          senderId: currentUserId,
-          timestamp: "10:20 AM"
-        },
-        {
-          id: "msg3",
-          content: "That's awesome! What camera do you use?",
-          senderId: "conv1",
-          timestamp: "10:22 AM"
-        },
-        {
-          id: "msg4",
-          content: "I have a Sony A7III, but sometimes I just use my phone.",
-          senderId: currentUserId,
-          timestamp: "10:25 AM"
-        },
-        {
-          id: "msg5",
-          content: "Hey, how are you doing?",
-          senderId: "conv1",
-          timestamp: "10:30 AM"
+  const selectedConversation = conversations.find(c => c._id === selectedConversationId);
+  
+  // Fetch conversations
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        const data = await chatService.getConversations();
+        console.log("Conversations:", data);
+        setConversations(data);
+        
+        // Select first conversation if available
+        if (data.length > 0 && !selectedConversationId) {
+          setSelectedConversationId(data[0]._id);
         }
-      ],
-      online: true
-    },
-    {
-      id: "conv2",
-      name: "Michael",
-      photoUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=150&h=150",
-      lastMessage: "Let me know when you're free to meet up!",
-      timestamp: "Yesterday",
-      unread: false,
-      messages: [
-        {
-          id: "msg1",
-          content: "Hi, I noticed we both like hiking!",
-          senderId: currentUserId,
-          timestamp: "Yesterday"
-        },
-        {
-          id: "msg2",
-          content: "Yes! I try to go every weekend. What's your favorite trail?",
-          senderId: "conv2",
-          timestamp: "Yesterday"
-        },
-        {
-          id: "msg3",
-          content: "I love the mountain trails just outside the city. Have you been there?",
-          senderId: currentUserId,
-          timestamp: "Yesterday"
-        },
-        {
-          id: "msg4",
-          content: "Not yet, but I'd love to check it out sometime.",
-          senderId: "conv2",
-          timestamp: "Yesterday"
-        },
-        {
-          id: "msg5",
-          content: "Let me know when you're free to meet up!",
-          senderId: "conv2",
-          timestamp: "Yesterday"
-        }
-      ],
-      online: false
-    },
-  ];
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load conversations",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchConversations();
+  }, [toast]);
   
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>("conv1");
-  const [conversations, setConversations] = useState(conversationsData);
-  
-  const selectedConversation = conversations.find(c => c.id === selectedConversationId);
-  
-  const handleSendMessage = (content: string) => {
+  // Fetch messages when conversation selected
+  useEffect(() => {
     if (selectedConversationId) {
-      const newMessage = {
-        id: `msg${Date.now()}`,
-        content,
-        senderId: currentUserId,
-        timestamp: "Just now"
+      const fetchMessages = async () => {
+        try {
+          const data = await chatService.getMessages(selectedConversationId);
+          console.log("Messages:", data);
+          setMessages(data);
+        } catch (error) {
+          console.error("Failed to fetch messages:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load messages",
+            variant: "destructive",
+          });
+        }
       };
       
+      fetchMessages();
+    }
+  }, [selectedConversationId, toast]);
+  
+  const handleSendMessage = async (content: string) => {
+    if (!selectedConversationId || !content.trim()) return;
+    
+    try {
+      setSendingMessage(true);
+      const response = await chatService.sendMessage(selectedConversationId, content);
+      
+      // Update messages list with new message
+      setMessages(prevMessages => [...prevMessages, {
+        id: response._id,
+        _id: response._id,
+        content: response.message,
+        message: response.message,
+        senderId: response.senderId,
+        receiverId: response.receiverId,
+        timestamp: 'Just now',
+        created: response.created,
+        status: response.status
+      }]);
+      
+      // Update conversation list with new last message
       setConversations(prevConversations => 
         prevConversations.map(conv => 
-          conv.id === selectedConversationId
+          conv._id === selectedConversationId
             ? {
                 ...conv,
-                messages: [...conv.messages, newMessage],
-                lastMessage: content,
-                timestamp: "Just now"
+                lastMessage: {
+                  ...conv.lastMessage,
+                  message: content,
+                  created: new Date().toISOString()
+                }
               }
             : conv
         )
       );
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingMessage(false);
     }
   };
   
   const handleSelectConversation = (id: string) => {
     setSelectedConversationId(id);
-    // Mark as read when selected
-    setConversations(prevConversations => 
-      prevConversations.map(conv => 
-        conv.id === id
-          ? { ...conv, unread: false }
-          : conv
-      )
-    );
   };
-
+  
+  // Format conversation data for MessageList component
+  const formattedConversations = conversations.map(conv => ({
+    id: conv._id,
+    name: `${conv.userDetails.fname} ${conv.userDetails.lname}`,
+    photoUrl: "", // We need to add profile photo support
+    lastMessage: conv.lastMessage.message,
+    timestamp: formatTimestamp(conv.lastMessage.created),
+    unread: conv.lastMessage.status === "UNREAD" && conv.unreadCount > 0
+  }));
+  
+  // Format message data for ConversationView component
+  const formattedMessages = messages.map(msg => ({
+    id: msg._id || msg.id,
+    content: msg.message || msg.content,
+    senderId: msg.senderId,
+    timestamp: formatTimestamp(msg.created || msg.timestamp)
+  }));
+  
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="container flex-1 py-6 flex flex-col">
         <h1 className="text-2xl font-bold mb-6">Messages</h1>
         
-        <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
-          {/* Message list sidebar */}
-          <div className="w-full md:w-1/3 bg-white rounded-lg border overflow-hidden">
-            <div className="p-4 border-b">
-              <h2 className="font-medium">Conversations</h2>
-            </div>
-            <div className="overflow-y-auto h-[calc(100%-60px)]">
-              <MessageList 
-                conversations={conversations}
-                selectedId={selectedConversationId}
-                onSelectConversation={handleSelectConversation}
-              />
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-          
-          {/* Conversation view */}
-          <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden">
-            {selectedConversation ? (
-              <ConversationView
-                contact={{
-                  id: selectedConversation.id,
-                  name: selectedConversation.name,
-                  photoUrl: selectedConversation.photoUrl,
-                  online: selectedConversation.online
-                }}
-                messages={selectedConversation.messages}
-                currentUserId={currentUserId}
-                onSendMessage={handleSendMessage}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full w-full">
-                <p className="text-muted-foreground">
-                  Select a conversation to start chatting
-                </p>
+        ) : conversations.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">You don't have any conversations yet.</p>
+            <p className="text-muted-foreground mt-2">Start browsing to find someone to chat with!</p>
+          </Card>
+        ) : (
+          <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
+            {/* Message list sidebar */}
+            <div className="w-full md:w-1/3 bg-white rounded-lg border overflow-hidden">
+              <div className="p-4 border-b">
+                <h2 className="font-medium">Conversations</h2>
               </div>
-            )}
+              <div className="overflow-y-auto h-[calc(100%-60px)]">
+                <MessageList 
+                  conversations={formattedConversations}
+                  selectedId={selectedConversationId}
+                  onSelectConversation={handleSelectConversation}
+                />
+              </div>
+            </div>
+            
+            {/* Conversation view */}
+            <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden">
+              {selectedConversation ? (
+                <ConversationView
+                  contact={{
+                    id: selectedConversation._id,
+                    name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
+                    photoUrl: "", // We need to add profile photo support
+                    online: false // We need to add online status
+                  }}
+                  messages={formattedMessages}
+                  currentUserId={user?._id || ""}
+                  onSendMessage={handleSendMessage}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full w-full">
+                  <p className="text-muted-foreground">
+                    Select a conversation to start chatting
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
+};
+
+// Helper function to format timestamps
+const formatTimestamp = (timestamp: string): string => {
+  if (!timestamp) return '';
+  
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString();
+  }
 };
 
 export default Messages;

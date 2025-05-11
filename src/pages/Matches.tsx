@@ -5,9 +5,21 @@ import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
 import { relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
+import { User } from "@/types/user";
+
+interface MatchesResponse {
+  count: number;
+  matches: (User & {
+    relationship: {
+      id: string;
+      status: string;
+      createdAt: string;
+    }
+  })[];
+}
 
 const Matches = () => {
-  const [matches, setMatches] = useState<any[]>([]);
+  const [matches, setMatches] = useState<MatchesResponse["matches"]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -61,6 +73,17 @@ const Matches = () => {
     return `${Math.floor(diffInDays / 30)} month${Math.floor(diffInDays / 30) > 1 ? 's' : ''} ago`;
   };
 
+  // Extract up to 3 interests from user data
+  const extractInterests = (user: User) => {
+    const tags: string[] = [];
+    
+    if (user.workEducation) tags.push(user.workEducation.split(' ')[0]);
+    if (user.patternOfSalaah) tags.push(user.patternOfSalaah);
+    if (user.nationality) tags.push(user.nationality);
+    
+    return tags.filter(Boolean).slice(0, 3);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -81,11 +104,7 @@ const Matches = () => {
                 location={match.country || "Location not specified"}
                 photoUrl="" // We'll need to implement profile photos later
                 matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
-                tags={[
-                  match.workEducation?.split(' ')[0] || "",
-                  match.patternOfSalaah || "",
-                  match.nationality || ""
-                ].filter(Boolean)}
+                tags={extractInterests(match)}
               />
             ))}
           </div>
