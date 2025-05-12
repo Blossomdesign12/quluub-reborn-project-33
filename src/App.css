@@ -1,10 +1,14 @@
+
+/* Remove default padding/margin that's causing white space */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   text-align: center;
 }
 
+/* Keep logo animations */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -39,4 +43,12 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Full-width content */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }

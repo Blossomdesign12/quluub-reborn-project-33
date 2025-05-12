@@ -1,10 +1,8 @@
 
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, X, ChevronLeft, ChevronRight, Send, UserPlus } from "lucide-react";
-import ProfileImage from "@/components/ProfileImage";
+import { Heart, X, Send, UserPlus } from "lucide-react";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
@@ -16,6 +14,9 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { Card, CardContent } from "@/components/ui/card";
+import { UserProfileCard } from "@/components/UserProfileCard";
+import { Loader2 } from "lucide-react";
 
 const Browse = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -98,6 +99,10 @@ const Browse = () => {
     navigate(`/messages?userId=${userId}`);
   };
 
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile?id=${userId}`);
+  };
+
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -115,32 +120,6 @@ const Browse = () => {
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
 
-  // Calculate age from DOB
-  const calculateAge = (dob: Date | string | undefined) => {
-    if (!dob) return null;
-    
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
-
-  // Format any JSON string fields
-  const parseJsonField = (jsonString: string | null | undefined) => {
-    if (!jsonString) return null;
-    try {
-      return JSON.parse(jsonString);
-    } catch (e) {
-      return jsonString;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -149,83 +128,84 @@ const Browse = () => {
         
         {loading ? (
           <div className="flex justify-center items-center h-96">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
         ) : users.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {currentUsers.map(user => (
-                <Card key={user._id} className="overflow-hidden">
-                  <div className="relative h-48">
-                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                      <ProfileImage
-                        src=""
-                        alt={`${user.fname || ''} ${user.lname || ''}`}
-                        fallback={(user.fname?.charAt(0) || "") + (user.lname?.charAt(0) || "")}
-                        size="lg"
-                        className="h-20 w-20 text-2xl"
-                      />
-                    </div>
+                <div key={user._id || user.id} className="flex flex-col h-full">
+                  <UserProfileCard 
+                    user={user} 
+                    onView={handleViewProfile}
+                    onLike={(id) => handleLike(id)}
+                    onMessage={(id) => handleMessage(id)}
+                  />
+                  <div className="flex justify-between space-x-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleSkip(user._id || user.id || '')}
+                      disabled={processingAction}
+                    >
+                      <X className="h-5 w-5 text-red-500" />
+                    </Button>
                     
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
-                      <h3 className="text-lg font-bold">
-                        {user.fname} {user.lname}, {calculateAge(user.dob)}
-                      </h3>
-                      <p className="text-xs">{user.country || "Location not specified"}</p>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleLike(user._id || user.id || '')}
+                      disabled={processingAction || pendingConnections.includes(user._id || user.id || '')}
+                    >
+                      {pendingConnections.includes(user._id || user.id || '') ? (
+                        <UserPlus className="h-5 w-5 text-amber-500" />
+                      ) : (
+                        <Heart className="h-5 w-5 text-green-500" />
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleMessage(user._id || user.id || '')}
+                      disabled={processingAction}
+                    >
+                      <Send className="h-5 w-5 text-purple-500" />
+                    </Button>
                   </div>
-                  
-                  <CardContent className="p-4">
-                    <div className="flex justify-between space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleSkip(user._id!)}
-                        disabled={processingAction}
-                      >
-                        <X className="h-5 w-5 text-red-500" />
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleLike(user._id!)}
-                        disabled={processingAction || pendingConnections.includes(user._id!)}
-                      >
-                        {pendingConnections.includes(user._id!) ? (
-                          <UserPlus className="h-5 w-5 text-amber-500" />
-                        ) : (
-                          <Heart className="h-5 w-5 text-green-500" />
-                        )}
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={() => handleMessage(user._id!)}
-                        disabled={processingAction}
-                      >
-                        <Send className="h-5 w-5 text-purple-500" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                </div>
               ))}
             </div>
             
             <Pagination className="mt-6">
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious onClick={goToPrevPage} disabled={currentPage === 1} />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={goToPrevPage} 
+                    disabled={currentPage === 1}
+                    className="cursor-pointer"
+                  >
+                    <PaginationPrevious />
+                  </Button>
                 </PaginationItem>
                 <PaginationItem className="flex items-center px-4">
                   Page {currentPage} of {totalPages}
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationNext onClick={goToNextPage} disabled={currentPage === totalPages} />
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={goToNextPage} 
+                    disabled={currentPage === totalPages}
+                    className="cursor-pointer"
+                  >
+                    <PaginationNext />
+                  </Button>
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
