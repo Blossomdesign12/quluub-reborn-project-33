@@ -1,5 +1,5 @@
 
-import { relationshipService, chatService, userService } from "@/lib/api-client";
+import { relationshipService, chatService, userService, authService } from "@/lib/api-client";
 
 /**
  * Debug utility to log various model data to the console
@@ -11,7 +11,7 @@ export const logAllModelData = async () => {
   try {
     // Fetch and log user data
     console.log("Attempting to fetch current user...");
-    const currentUser = await userService.getCurrentUser();
+    const currentUser = await authService.getCurrentUser();
     console.log("Current User:", currentUser);
     
     // Fetch relationship data
