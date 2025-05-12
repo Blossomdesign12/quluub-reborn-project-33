@@ -8,7 +8,6 @@ const Chat = require('./models/Chat'); // Import the Chat model
 const Relationship = require('./models/Relationship'); // Import the Relationship model
 const UserActivityLog = require('./models/UserActivityLog'); // Import the UserActivityLog model
 const WaliChat = require('./models/WaliChat'); // Import the WaliChat model
-const serverLogger = require('./utils/serverLogger'); // Import our new server logger
 
 // Load environment variables
 dotenv.config();
@@ -39,32 +38,6 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/relationships', require('./routes/relationshipRoutes'));
 app.use('/api/chats', require('./routes/chatRoutes'));
 
-// Add a debug route for logging data
-app.get('/api/debug/logs', async (req, res) => {
-  try {
-    await serverLogger.logAllModelData();
-    res.json({ success: true, message: 'Server logs generated. Check your server console.' });
-  } catch (error) {
-    console.error('Error generating debug logs:', error);
-    res.status(500).json({ success: false, message: 'Error generating debug logs' });
-  }
-});
-
-// Add a route to log data for a specific user
-app.get('/api/debug/logs/user/:userId', async (req, res) => {
-  try {
-    const success = await serverLogger.logAllDataForUser(req.params.userId);
-    if (success) {
-      res.json({ success: true, message: `Logs for user ${req.params.userId} generated. Check your server console.` });
-    } else {
-      res.status(404).json({ success: false, message: `User ${req.params.userId} not found` });
-    }
-  } catch (error) {
-    console.error(`Error generating debug logs for user ${req.params.userId}:`, error);
-    res.status(500).json({ success: false, message: 'Error generating debug logs' });
-  }
-});
-
 // Root route for API check
 app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to Quluub API!' });
@@ -89,9 +62,66 @@ const PORT = process.env.PORT || 5000;
     // Connect to database
     await connectDB();
     
-    // Log all model data after connecting to the database
-    console.log('Connected to database. Generating initial debug logs...');
-    await serverLogger.logAllModelData();
+    // Fetch and log all users after connecting to the database
+    console.log('Fetching all users from database...');
+    const users = await User.find().select('-password');
+    console.log(`Total users: ${users.length}`);
+    
+    // Get detailed data for 3 users
+    console.log('\n==========================================');
+    console.log('DETAILED USER DATA FOR 3 SAMPLE USERS');
+    console.log('==========================================\n');
+    
+    // Fetch 3 random users for detailed logging
+    const sampleUsers = await User.find().limit(3).select('-password');
+    
+    for (const user of sampleUsers) {
+      const userId = user._id;
+      console.log(`\n\n==========================================`);
+      console.log(`DETAILED DATA FOR USER ID: ${userId}`);
+      console.log(`==========================================`);
+      
+      // Fetch user data
+      console.log('\nUser Data:');
+      console.log(JSON.stringify(user, null, 2));
+      
+      // Fetch chat data for this user
+      const chatData = await Chat.find({
+        $or: [
+          { senderId: userId.toString() },
+          { receiverId: userId.toString() }
+        ]
+      });
+      console.log('\nChat Data:');
+      console.log(JSON.stringify(chatData, null, 2));
+      
+      // Fetch relationship data
+      const relationshipData = await Relationship.find({
+        $or: [
+          { follower_user_id: userId.toString() },
+          { followed_user_id: userId.toString() }
+        ]
+      });
+      console.log('\nRelationship Data:');
+      console.log(JSON.stringify(relationshipData, null, 2));
+      
+      // Fetch activity log data
+      const activityLogData = await UserActivityLog.find({
+        $or: [
+          { userId: userId.toString() },
+          { receiverId: userId.toString() }
+        ]
+      });
+      console.log('\nUser Activity Log Data:');
+      console.log(JSON.stringify(activityLogData, null, 2));
+      
+      // Fetch wali chat data
+      const waliChatData = await WaliChat.find({
+        wardid: userId.toString()
+      });
+      console.log('\nWali Chat Data:');
+      console.log(JSON.stringify(waliChatData, null, 2));
+    }
     
     // Start server
     app.listen(PORT, () => {

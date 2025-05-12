@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
@@ -123,98 +124,53 @@ export const userService = {
 export const relationshipService = {
   sendRequest: async (followedUserId: string): Promise<any> => {
     console.log("Sending relationship request to:", followedUserId);
-    try {
-      const response = await apiClient.post('/relationships/request', { followedUserId });
-      return response.data;
-    } catch (error) {
-      console.error("Error sending relationship request:", error);
-      throw error;
-    }
+    const response = await apiClient.post('/relationships/request', { followedUserId });
+    return response.data;
   },
   
   respondToRequest: async (relationshipId: string, status: 'rejected' | 'matched'): Promise<any> => {
-    try {
-      const response = await apiClient.put(`/relationships/${relationshipId}/status`, { status });
-      return response.data;
-    } catch (error) {
-      console.error("Error responding to request:", error);
-      throw error;
-    }
+    const response = await apiClient.put(`/relationships/${relationshipId}/status`, { status });
+    return response.data;
   },
   
   withdrawRequest: async (relationshipId: string): Promise<any> => {
-    try {
-      const response = await apiClient.delete(`/relationships/withdraw/${relationshipId}`);
-      return response.data;
-    } catch (error) {
-      console.error("Error withdrawing request:", error);
-      throw error;
-    }
+    const response = await apiClient.delete(`/relationships/withdraw/${relationshipId}`);
+    return response.data;
   },
   
   getMatches: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get('/relationships/matches');
-      console.log("Matches API response:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching matches:", error);
-      return { count: 0, matches: [] }; // Return empty data on error
-    }
+    const response = await apiClient.get('/relationships/matches');
+    console.log("Matches API response:", response.data);
+    return response.data;
   },
   
   getPendingRequests: async (): Promise<any> => {
-    try {
-      const response = await apiClient.get('/relationships/pending');
-      console.log("Pending requests API response:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching pending requests:", error);
-      return { count: 0, requests: [] }; // Return empty data on error
-    }
+    const response = await apiClient.get('/relationships/pending');
+    console.log("Pending requests API response:", response.data);
+    return response.data;
   },
 };
 
 // Chat services
 export const chatService = {
   getConversations: async (): Promise<any[]> => {
-    try {
-      const response = await apiClient.get('/chats/conversations');
-      return response.data || [];
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-      return [];
-    }
+    const response = await apiClient.get('/chats/conversations');
+    return response.data;
   },
   
   getMessages: async (userId: string): Promise<any[]> => {
-    try {
-      const response = await apiClient.get(`/chats/messages/${userId}`);
-      return response.data || [];
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      return [];
-    }
+    const response = await apiClient.get(`/chats/messages/${userId}`);
+    return response.data;
   },
   
   sendMessage: async (receiverId: string, message: string): Promise<any> => {
-    try {
-      const response = await apiClient.post('/chats/send', { receiverId, message });
-      return response.data;
-    } catch (error) {
-      console.error("Error sending message:", error);
-      throw error;
-    }
+    const response = await apiClient.post('/chats/send', { receiverId, message });
+    return response.data;
   },
   
   getUnreadCount: async (): Promise<number> => {
-    try {
-      const response = await apiClient.get('/chats/unread');
-      return response.data?.unreadCount || 0;
-    } catch (error) {
-      console.error("Error getting unread count:", error);
-      return 0;
-    }
+    const response = await apiClient.get('/chats/unread');
+    return response.data.unreadCount;
   }
 };
 

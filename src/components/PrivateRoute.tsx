@@ -4,10 +4,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 interface PrivateRouteProps {
-  children: React.ReactNode;
+  element: React.ReactNode;
 }
 
-const PrivateRoute = ({ children }: PrivateRouteProps) => {
+const PrivateRoute = ({ element }: PrivateRouteProps) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
@@ -24,7 +24,7 @@ const PrivateRoute = ({ children }: PrivateRouteProps) => {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
-  return <>{children}</>;
+  return <>{element}</>;
 };
 
 export default PrivateRoute;

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -218,21 +219,13 @@ const Browse = () => {
             <Pagination className="mt-6">
               <PaginationContent>
                 <PaginationItem>
-                  {currentPage === 1 ? (
-                    <PaginationPrevious className="pointer-events-none opacity-50" />
-                  ) : (
-                    <PaginationPrevious onClick={goToPrevPage} />
-                  )}
+                  <PaginationPrevious onClick={goToPrevPage} disabled={currentPage === 1} />
                 </PaginationItem>
                 <PaginationItem className="flex items-center px-4">
                   Page {currentPage} of {totalPages}
                 </PaginationItem>
                 <PaginationItem>
-                  {currentPage === totalPages ? (
-                    <PaginationNext className="pointer-events-none opacity-50" />
-                  ) : (
-                    <PaginationNext onClick={goToNextPage} />
-                  )}
+                  <PaginationNext onClick={goToNextPage} disabled={currentPage === totalPages} />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>

@@ -7,7 +7,6 @@ import { chatService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
-import { logAllModelData } from "@/utils/debugLogger";
 
 interface Conversation {
   _id: string;
@@ -47,31 +46,6 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   
-  // Run debug logging on component mount
-  useEffect(() => {
-    const runDebugLogging = async () => {
-      try {
-        await logAllModelData();
-      } catch (error) {
-        console.error("Debug logging failed:", error);
-      }
-    };
-    
-    runDebugLogging();
-  }, []);
-  
-  // Fix: Ensure the selected contact is the other person in the conversation, not yourself
-  const getSelectedContact = () => {
-    if (!selectedConversationId || !selectedConversation) return null;
-    
-    return {
-      id: selectedConversationId,
-      name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
-      photoUrl: "", // We need to add profile photo support
-      online: false // We need to add online status
-    };
-  };
-  
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   
   // Fetch conversations
@@ -81,10 +55,10 @@ const Messages = () => {
         setLoading(true);
         const data = await chatService.getConversations();
         console.log("Conversations:", data);
-        setConversations(data || []);  // Fix: Handle case when data is undefined
+        setConversations(data);
         
         // Select first conversation if available
-        if (data && data.length > 0 && !selectedConversationId) {
+        if (data.length > 0 && !selectedConversationId) {
           setSelectedConversationId(data[0]._id);
         }
       } catch (error) {
@@ -109,7 +83,7 @@ const Messages = () => {
         try {
           const data = await chatService.getMessages(selectedConversationId);
           console.log("Messages:", data);
-          setMessages(data || []); // Fix: Handle case when data is undefined
+          setMessages(data);
         } catch (error) {
           console.error("Failed to fetch messages:", error);
           toast({
@@ -131,36 +105,34 @@ const Messages = () => {
       setSendingMessage(true);
       const response = await chatService.sendMessage(selectedConversationId, content);
       
-      if (response) { // Fix: Check if response exists
-        // Update messages list with new message
-        setMessages(prevMessages => [...prevMessages, {
-          id: response._id,
-          _id: response._id,
-          content: response.message,
-          message: response.message,
-          senderId: response.senderId,
-          receiverId: response.receiverId,
-          timestamp: 'Just now',
-          created: response.created,
-          status: response.status
-        }]);
-        
-        // Update conversation list with new last message
-        setConversations(prevConversations => 
-          prevConversations.map(conv => 
-            conv._id === selectedConversationId
-              ? {
-                  ...conv,
-                  lastMessage: {
-                    ...conv.lastMessage,
-                    message: content,
-                    created: new Date().toISOString()
-                  }
+      // Update messages list with new message
+      setMessages(prevMessages => [...prevMessages, {
+        id: response._id,
+        _id: response._id,
+        content: response.message,
+        message: response.message,
+        senderId: response.senderId,
+        receiverId: response.receiverId,
+        timestamp: 'Just now',
+        created: response.created,
+        status: response.status
+      }]);
+      
+      // Update conversation list with new last message
+      setConversations(prevConversations => 
+        prevConversations.map(conv => 
+          conv._id === selectedConversationId
+            ? {
+                ...conv,
+                lastMessage: {
+                  ...conv.lastMessage,
+                  message: content,
+                  created: new Date().toISOString()
                 }
-              : conv
-          )
-        );
-      }
+              }
+            : conv
+        )
+      );
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -182,20 +154,18 @@ const Messages = () => {
     id: conv._id,
     name: `${conv.userDetails.fname} ${conv.userDetails.lname}`,
     photoUrl: "", // We need to add profile photo support
-    lastMessage: conv.lastMessage?.message || "No messages yet", // Fix: Handle undefined lastMessage
-    timestamp: formatTimestamp(conv.lastMessage?.created || ""), // Fix: Handle undefined created
-    unread: (conv.lastMessage?.status === "UNREAD" && conv.unreadCount > 0) || false // Fix: Handle undefined status
+    lastMessage: conv.lastMessage.message,
+    timestamp: formatTimestamp(conv.lastMessage.created),
+    unread: conv.lastMessage.status === "UNREAD" && conv.unreadCount > 0
   }));
   
   // Format message data for ConversationView component
   const formattedMessages = messages.map(msg => ({
-    id: msg._id || msg.id || "",  // Fix: Provide default value
-    content: msg.message || msg.content || "",  // Fix: Provide default value
-    senderId: msg.senderId || "",  // Fix: Provide default value
-    timestamp: formatTimestamp(msg.created || msg.timestamp || "")  // Fix: Provide default value
+    id: msg._id || msg.id,
+    content: msg.message || msg.content,
+    senderId: msg.senderId,
+    timestamp: formatTimestamp(msg.created || msg.timestamp)
   }));
-  
-  const selectedContact = getSelectedContact();
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -230,9 +200,14 @@ const Messages = () => {
             
             {/* Conversation view */}
             <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden">
-              {selectedContact ? (
+              {selectedConversation ? (
                 <ConversationView
-                  contact={selectedContact}
+                  contact={{
+                    id: selectedConversation._id,
+                    name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
+                    photoUrl: "", // We need to add profile photo support
+                    online: false // We need to add online status
+                  }}
                   messages={formattedMessages}
                   currentUserId={user?._id || ""}
                   onSendMessage={handleSendMessage}
@@ -256,24 +231,17 @@ const Messages = () => {
 const formatTimestamp = (timestamp: string): string => {
   if (!timestamp) return '';
   
-  try {
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) return ''; // Fix: Handle invalid date
-    
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-    
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } else if (diffInHours < 48) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString();
-    }
-  } catch (error) {
-    console.error("Error formatting timestamp:", error, timestamp);
-    return '';
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString();
   }
 };
 
