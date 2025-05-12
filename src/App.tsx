@@ -1,51 +1,56 @@
 
+import { useEffect } from 'react';
+import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import PrivateRoute from "./components/PrivateRoute";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import Browse from "./pages/Browse";
-import Messages from "./pages/Messages";
-import NotFound from "./pages/NotFound";
-import Dashboard from "./pages/Dashboard";
-import Search from "./pages/Search";
-import Matches from "./pages/Matches";
-import Settings from "./pages/Settings";
-import Alerts from "./pages/Alerts";
-import AdminDashboard from "./pages/AdminDashboard";
+import PrivateRoute from './components/PrivateRoute';
 
-const queryClient = new QueryClient();
+// Pages
+import Index from './pages/Index';
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import Browse from './pages/Browse';
+import Profile from './pages/Profile';
+import Settings from './pages/Settings';
+import Search from './pages/Search';
+import Matches from './pages/Matches';
+import Messages from './pages/Messages';
+import Alerts from './pages/Alerts';
+import NotFound from './pages/NotFound';
+import { initDebugLogging } from './utils/initDebugLogging';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
-            <Route path="/browse" element={<PrivateRoute element={<Browse />} />} />
-            <Route path="/messages" element={<PrivateRoute element={<Messages />} />} />
-            <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
-            <Route path="/search" element={<PrivateRoute element={<Search />} />} />
-            <Route path="/matches" element={<PrivateRoute element={<Matches />} />} />
-            <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
-            <Route path="/alerts" element={<PrivateRoute element={<Alerts />} />} />
-            <Route path="/admin" element={<PrivateRoute element={<AdminDashboard />} />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  // Initialize debug logging on app startup
+  useEffect(() => {
+    initDebugLogging();
+  }, []);
+  
+  return (
+    <>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          
+          {/* Protected routes */}
+          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+          <Route path="/browse" element={<PrivateRoute><Browse /></PrivateRoute>} />
+          <Route path="/profile/:userId" element={<PrivateRoute><Profile /></PrivateRoute>} />
+          <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+          <Route path="/search" element={<PrivateRoute><Search /></PrivateRoute>} />
+          <Route path="/matches" element={<PrivateRoute><Matches /></PrivateRoute>} />
+          <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+          <Route path="/alerts" element={<PrivateRoute><Alerts /></PrivateRoute>} />
+          
+          {/* 404 route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+      <Toaster />
+    </>
+  );
+}
 
 export default App;
