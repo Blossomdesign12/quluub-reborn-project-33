@@ -52,9 +52,12 @@ export const formatFieldValue = (value: any): string => {
     if (Array.isArray(parsedValue)) {
       return parsedValue.join(', ');
     }
-    if (parsedValue !== value) {
+    if (parsedValue !== value && typeof parsedValue === 'object') {
       // It's a parsed object
-      return JSON.stringify(parsedValue);
+      return Object.entries(parsedValue)
+        .filter(([_, val]) => val)
+        .map(([key, val]) => `${key}: ${val}`)
+        .join(', ');
     }
     return value;
   }
@@ -97,4 +100,44 @@ export const fieldNameToLabel = (fieldName: string): string => {
     .replace(/_/g, ' ')
     // Capitalize first letter
     .replace(/^./, str => str.toUpperCase());
+};
+
+/**
+ * Format time since a date (e.g., "3 days ago")
+ * @param date The date to format
+ * @returns Formatted time string
+ */
+export const timeAgo = (date: Date | string | undefined): string => {
+  if (!date) return 'Never';
+  
+  const now = new Date();
+  const pastDate = new Date(date);
+  const seconds = Math.floor((now.getTime() - pastDate.getTime()) / 1000);
+  
+  let interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) {
+    return interval === 1 ? '1 year ago' : `${interval} years ago`;
+  }
+  
+  interval = Math.floor(seconds / 2592000);
+  if (interval >= 1) {
+    return interval === 1 ? '1 month ago' : `${interval} months ago`;
+  }
+  
+  interval = Math.floor(seconds / 86400);
+  if (interval >= 1) {
+    return interval === 1 ? '1 day ago' : `${interval} days ago`;
+  }
+  
+  interval = Math.floor(seconds / 3600);
+  if (interval >= 1) {
+    return interval === 1 ? '1 hour ago' : `${interval} hours ago`;
+  }
+  
+  interval = Math.floor(seconds / 60);
+  if (interval >= 1) {
+    return interval === 1 ? '1 minute ago' : `${interval} minutes ago`;
+  }
+  
+  return seconds < 10 ? 'just now' : `${Math.floor(seconds)} seconds ago`;
 };

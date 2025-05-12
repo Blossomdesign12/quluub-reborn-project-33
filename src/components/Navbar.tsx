@@ -1,70 +1,89 @@
 
-import { Button } from "@/components/ui/button";
+import { useContext } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageCircle, Search, User, Bell, Settings } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/contexts/AuthContext";
+import { AuthContext } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut, User, Search, MessageCircle, Heart } from "lucide-react";
+import ProfileImage from "./ProfileImage";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useContext(AuthContext);
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
+  if (!user) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center">
-          <span className="text-xl font-bold text-primary">Quluub</span>
-        </Link>
-        
-        {isAuthenticated ? (
-          <div className="flex items-center space-x-4">
-            <nav className="hidden md:flex items-center space-x-4">
-              <Link to="/browse" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <Search size={20} />
-                <span>Discover</span>
-              </Link>
-              <Link to="/matches" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <Heart size={20} />
-                <span>Matches</span>
-              </Link>
-              <Link to="/messages" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <MessageCircle size={20} />
-                <span>Messages</span>
-              </Link>
-              <Link to="/profile" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <User size={20} />
-                <span>Profile</span>
-              </Link>
-              <Link to="/alerts" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <Bell size={20} />
-                <span>Notifications</span>
-              </Link>
-              <Link to="/settings" className="flex items-center space-x-1 text-sm font-medium text-muted-foreground hover:text-primary">
-                <Settings size={20} />
-                <span>Settings</span>
-              </Link>
-            </nav>
+    <header className="w-full border-b bg-white">
+      <div className="container py-4 flex items-center justify-between">
+        <div>
+          <Link to="/" className="text-xl font-bold text-primary">
+            Quluub
+          </Link>
+        </div>
+
+        <nav>
+          <ul className="flex items-center space-x-2">
+            <li>
+              <Button variant="ghost" asChild>
+                <Link to="/browse">
+                  <Search className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Discover</span>
+                </Link>
+              </Button>
+            </li>
             
-            <Link to="/profile">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=44&h=44" alt="Profile" />
-                <AvatarFallback>{user ? `${user.fname?.charAt(0)}${user.lname?.charAt(0)}` : 'US'}</AvatarFallback>
-              </Avatar>
-            </Link>
-          </div>
-        ) : (
-          <div className="flex items-center space-x-4">
-            <Link to="/auth">
-              <Button variant="outline" size="sm">
-                Login
+            <li>
+              <Button variant="ghost" asChild>
+                <Link to="/matches">
+                  <Heart className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Matches</span>
+                </Link>
               </Button>
-            </Link>
-            <Link to="/auth">
-              <Button size="sm">
-                Sign Up
+            </li>
+            
+            <li>
+              <Button variant="ghost" asChild>
+                <Link to="/messages">
+                  <MessageCircle className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Messages</span>
+                </Link>
               </Button>
-            </Link>
-          </div>
-        )}
+            </li>
+            
+            <li>
+              <NotificationBell />
+            </li>
+            
+            <li className="ml-2">
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/profile">
+                  <ProfileImage
+                    src={user.profile_pic || ""}
+                    alt={user.username}
+                    fallback={user.fname?.charAt(0) || "U"}
+                    size="sm"
+                  />
+                </Link>
+              </Button>
+            </li>
+            
+            <li>
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </header>
   );

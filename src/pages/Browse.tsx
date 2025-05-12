@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Heart, X, Send, UserPlus } from "lucide-react";
+import { Heart, X, Send, UserPlus, Search, Filter } from "lucide-react";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
@@ -17,15 +17,26 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { UserProfileCard } from "@/components/UserProfileCard";
 import { Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 const Browse = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [usersPerPage] = useState(4); // Show 4 users per page
+  const [usersPerPage] = useState(8); // Show 8 users per page
   const [loading, setLoading] = useState(true);
   const [processingAction, setProcessingAction] = useState(false);
   const [pendingConnections, setPendingConnections] = useState<string[]>([]);
+  const [countryFilter, setCountryFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,6 +48,7 @@ const Browse = () => {
         console.log("Browse users:", fetchedUsers);
         if (fetchedUsers && fetchedUsers.length > 0) {
           setUsers(fetchedUsers);
+          setFilteredUsers(fetchedUsers);
           setTotalPages(Math.ceil(fetchedUsers.length / usersPerPage));
         } else {
           // If no users found, show toast
@@ -59,7 +71,45 @@ const Browse = () => {
     };
 
     fetchUsers();
+
+    // Fetch pending connections to highlight already requested users
+    const fetchPendingRequests = async () => {
+      try {
+        const response = await relationshipService.getPendingRequests();
+        if (response && response.requests) {
+          const pendingIds = response.requests.map((req: any) => req._id);
+          setPendingConnections(pendingIds);
+        }
+      } catch (error) {
+        console.error("Error fetching pending requests:", error);
+      }
+    };
+    
+    fetchPendingRequests();
   }, [toast, usersPerPage]);
+
+  // Filter users based on search and country filter
+  useEffect(() => {
+    let result = [...users];
+    
+    if (countryFilter) {
+      result = result.filter(user => user.country === countryFilter);
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(user => 
+        (user.fname?.toLowerCase().includes(query) || 
+         user.lname?.toLowerCase().includes(query) || 
+         user.kunya?.toLowerCase().includes(query) ||
+         user.username?.toLowerCase().includes(query))
+      );
+    }
+    
+    setFilteredUsers(result);
+    setTotalPages(Math.ceil(result.length / usersPerPage));
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [countryFilter, searchQuery, users, usersPerPage]);
 
   const handleLike = async (userId: string) => {
     if (processingAction) return;
@@ -115,10 +165,13 @@ const Browse = () => {
     }
   };
 
+  // Get unique countries for the filter
+  const uniqueCountries = [...new Set(users.filter(user => user.country).map(user => user.country))];
+
   // Get current users
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,11 +179,39 @@ const Browse = () => {
       <div className="container py-6">
         <h1 className="text-2xl font-bold mb-6">Find Your Match</h1>
         
+        {/* Search and Filter */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Search by name or username" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          
+          <div className="flex gap-2 items-center">
+            <Filter className="h-4 w-4" />
+            <Select value={countryFilter} onValueChange={setCountryFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter by country" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Countries</SelectItem>
+                {uniqueCountries.map(country => (
+                  <SelectItem key={country} value={country!}>{country}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        
         {loading ? (
           <div className="flex justify-center items-center h-96">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
-        ) : users.length > 0 ? (
+        ) : filteredUsers.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {currentUsers.map(user => (
@@ -214,8 +295,22 @@ const Browse = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-lg text-center text-muted-foreground">
-                No more profiles to browse. Check back later!
+                {searchQuery || countryFilter ? 
+                  "No users match your search criteria." :
+                  "No more profiles to browse. Check back later!"}
               </p>
+              {(searchQuery || countryFilter) && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCountryFilter("");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
