@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import apiClient from '@/lib/api-client';
+import { toast } from '@/components/ui/use-toast';
 
 // Base URL from environment variable or default
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -16,6 +16,11 @@ export const triggerServerLogs = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("Error triggering server logs:", error);
+    toast({
+      title: "Error",
+      description: "Failed to trigger server logs. Check server connectivity.",
+      variant: "destructive",
+    });
     return false;
   }
 };
@@ -36,6 +41,11 @@ export const triggerUserServerLogs = async (userId: string): Promise<boolean> =>
     return true;
   } catch (error) {
     console.error(`Error triggering server logs for user ${userId}:`, error);
+    toast({
+      title: "Error",
+      description: `Failed to trigger server logs for user ${userId}. Check server connectivity.`,
+      variant: "destructive",
+    });
     return false;
   }
 };

@@ -19,6 +19,7 @@ import Messages from './pages/Messages';
 import Alerts from './pages/Alerts';
 import NotFound from './pages/NotFound';
 import { initDebugLogging } from './utils/initDebugLogging';
+import { ServerLogs } from './components/ServerLogs';
 
 function App() {
   // Initialize debug logging on app startup
@@ -27,7 +28,7 @@ function App() {
   }, []);
   
   return (
-    <>
+    <div className="w-full min-h-screen">
       <Router>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -43,13 +44,14 @@ function App() {
           <Route path="/matches" element={<PrivateRoute><Matches /></PrivateRoute>} />
           <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
           <Route path="/alerts" element={<PrivateRoute><Alerts /></PrivateRoute>} />
+          <Route path="/debug" element={<PrivateRoute><div className="container py-8"><ServerLogs /></div></PrivateRoute>} />
           
           {/* 404 route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
       <Toaster />
-    </>
+    </div>
   );
 }
 
