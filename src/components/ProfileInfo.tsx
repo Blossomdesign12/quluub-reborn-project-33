@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { User } from "@/types/user";
 import { fieldNameToLabel, formatFieldValue, calculateAge, parseJsonField } from "@/utils/dataUtils";
 import { Edit } from "lucide-react";

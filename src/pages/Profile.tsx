@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -306,6 +305,9 @@ const Profile = () => {
               </TabsList>
               <TabsContent value="about">
                 <ProfileInfo
+                  user={profileUser}
+                  isCurrentUser={isOwnProfile}
+                  onEditClick={() => setIsEditMode(true)}
                   bio={profileUser.summary || "No summary provided"}
                   interests={extractInterests(profileUser)}
                   lookingFor={profileUser.maritalStatus || "Not specified"}
