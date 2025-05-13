@@ -1,4 +1,24 @@
 
-import { Heart, Lock, MessageCircle, Shield } from "lucide-react";
+import { 
+  Heart, 
+  Lock, 
+  MessageCircle, 
+  Shield, 
+  Search, 
+  LayoutDashboard, 
+  User, 
+  Bell, 
+  Settings 
+} from "lucide-react";
 
-export { Heart, Lock, MessageCircle, Shield };
+export { 
+  Heart, 
+  Lock, 
+  MessageCircle, 
+  Shield, 
+  Search, 
+  LayoutDashboard, 
+  User, 
+  Bell, 
+  Settings 
+};
