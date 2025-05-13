@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Wrap the App component with a div that has padding at the bottom
+// Add more padding at the bottom to account for the fixed navbar
 const AppWithBottomPadding = () => {
+  console.log('App being rendered');
   return (
-    <div className="content-area">
+    <div className="content-area pb-20">
       <App />
     </div>
   );

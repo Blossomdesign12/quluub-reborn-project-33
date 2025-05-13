@@ -1,15 +1,14 @@
 
 import { Link } from "react-router-dom";
-import { AuthContext } from "../contexts/AuthContext"; // Fixed import path
+import { useAuth } from "../contexts/AuthContext"; // Updated import path
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, User, Search, MessageCircle, Heart } from "lucide-react";
-import { useContext } from "react";
 import ProfileImage from "./ProfileImage";
 import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext) as { user: any, logout: () => void }; // Added type assertion
+  const { user, logout } = useAuth();
   const { toast } = useToast();
 
   const handleLogout = () => {

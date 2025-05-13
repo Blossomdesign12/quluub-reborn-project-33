@@ -43,12 +43,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(currentUser);
           } else {
             console.log('No user data returned despite having token');
+            localStorage.removeItem('token'); // Clean up invalid token
           }
         } else {
           console.log('No authentication token found');
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
+        localStorage.removeItem('token'); // Clean up on error
       } finally {
         setIsLoading(false);
       }
