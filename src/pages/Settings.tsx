@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import { Check, CheckCircle, BadgeDollarSign, Eye, EyeOff, Mail, HelpCircle } from "lucide-react";
+import { Lock } from "@/components/Icons"; // Import Lock from our Icons component
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
