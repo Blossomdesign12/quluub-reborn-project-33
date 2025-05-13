@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,11 @@ interface ProfileInfoProps {
   user: User;
   isCurrentUser: boolean;
   onEditClick?: () => void;
+  bio?: string;
+  interests?: string[];
+  lookingFor?: string;
+  occupation?: string;
+  education?: string;
 }
 
 const BASIC_INFO_FIELDS = [
@@ -49,7 +53,16 @@ const OTHER_INFO_FIELDS = [
   'icebreakers',
 ];
 
-const ProfileInfo = ({ user, isCurrentUser, onEditClick }: ProfileInfoProps) => {
+const ProfileInfo = ({ 
+  user, 
+  isCurrentUser, 
+  onEditClick,
+  bio,
+  interests,
+  lookingFor,
+  occupation,
+  education
+}: ProfileInfoProps) => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
@@ -96,13 +109,64 @@ const ProfileInfo = ({ user, isCurrentUser, onEditClick }: ProfileInfoProps) => 
           )}
         </CardHeader>
         <CardContent>
-          {user.summary ? (
-            <p className="text-sm">{user.summary}</p>
+          {bio || user.summary ? (
+            <p className="text-sm">{bio || user.summary}</p>
           ) : (
             <p className="text-sm text-muted-foreground italic">No summary provided</p>
           )}
         </CardContent>
       </Card>
+
+      {/* Interest Section - Show only if interests are provided */}
+      {interests && interests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Interests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {interests.map((interest, index) => (
+                <Badge key={index} variant="secondary">{interest}</Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Looking For Section - Show only if provided */}
+      {lookingFor && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Looking For</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{lookingFor}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Occupation/Education Section */}
+      {(occupation || education) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Work & Education</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {occupation && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Occupation</span>
+                <span className="text-sm font-medium">{occupation}</span>
+              </div>
+            )}
+            {education && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Education</span>
+                <span className="text-sm font-medium">{education}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
