@@ -1,17 +1,18 @@
 
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import SignupForm from "@/components/SignupForm";
 import { Heart, Shield, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { login, signup } = useAuth();
+  const { toast } = useToast();
   
   // Get the return URL from location state or default to /browse
   const from = (location.state as { from?: string })?.from || "/browse";

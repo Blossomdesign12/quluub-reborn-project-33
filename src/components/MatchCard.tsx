@@ -1,174 +1,115 @@
-
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Heart, X, MessageSquare, Send, UserPlus, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import ProfileImage from "@/components/ProfileImage";
+import { Heart, X, MessageSquare } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useState } from "react";
 
-interface MatchCardProps {
+export interface MatchCardProps {
   name: string;
   age: number;
   location: string;
-  bio?: string;
   photoUrl: string;
-  compatibility?: number;
-  matchPercentage?: number;
-  matchDate?: string;
-  tags?: string[];
-  onLike?: () => void;
-  onPass?: () => void;
-  onChat?: () => void;
-  onMessage?: () => void;
-  onConnect?: () => void;
-  isConnected?: boolean;
-  isPendingConnection?: boolean;
-  userId?: string;
+  tags: string[];
+  userId: string;
+  matchPercentage?: number; // Make this optional
+  onLike: () => Promise<void>;
+  onPass: () => void;
+  onMessage: () => void;
 }
 
 const MatchCard = ({
   name,
   age,
   location,
-  bio = "",
   photoUrl,
-  compatibility,
+  tags,
+  userId,
   matchPercentage,
-  matchDate,
-  tags = [],
   onLike,
   onPass,
-  onChat,
   onMessage,
-  onConnect,
-  isConnected,
-  isPendingConnection,
-  userId
 }: MatchCardProps) => {
-  const generateInitials = (name: string) => {
-    return name.split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+  const [isLiking, setIsLiking] = useState(false);
+
+  const handleLike = async () => {
+    setIsLiking(true);
+    try {
+      await onLike();
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
     <Card className="overflow-hidden">
-      <div className="relative h-60">
-        {/* Always use icon/avatar instead of photo */}
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-          <ProfileImage
-            src=""
-            alt={name}
-            fallback={generateInitials(name)}
-            size="lg"
-            className="h-24 w-24 text-3xl"
-          />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
-          <h3 className="text-xl font-bold">{name}, {age}</h3>
-          <p className="text-sm opacity-80">{location}</p>
-          {(compatibility || matchPercentage) && (
-            <Badge className="mt-2 bg-primary/90 text-white hover:bg-primary">
-              {compatibility || matchPercentage}% Tawafuq (Compatibility)
-            </Badge>
+      <div className="relative">
+        <AspectRatio ratio={3/4}>
+          {photoUrl ? (
+            <img 
+              src={photoUrl} 
+              alt={name} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+              <span className="text-4xl font-bold text-gray-400">
+                {name.charAt(0)}
+              </span>
+            </div>
           )}
-          {matchDate && (
-            <p className="text-xs mt-1 opacity-75">Matched {matchDate}</p>
-          )}
-        </div>
+        </AspectRatio>
+        
+        {matchPercentage && (
+          <Badge className="absolute top-2 right-2 bg-teal-500">
+            {matchPercentage}% Match
+          </Badge>
+        )}
       </div>
+      
       <CardContent className="p-4">
-        {bio && <p className="text-sm text-muted-foreground">{bio}</p>}
+        <div className="mb-4">
+          <h3 className="text-lg font-medium">{name}, {age}</h3>
+          <p className="text-sm text-gray-500">{location}</p>
+        </div>
         
-        {tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {tags.map((tag, idx) => (
-              <Badge key={idx} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-1 mb-4">
+          {tags.map((tag, index) => (
+            <Badge key={index} variant="secondary" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full flex-1 border-red-200 hover:bg-red-50 hover:text-red-500"
+            onClick={onPass}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-500"
+            onClick={onMessage}
+          >
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="rounded-full flex-1 border-green-200 hover:bg-green-50 hover:text-green-500"
+            onClick={handleLike}
+            disabled={isLiking}
+          >
+            <Heart className={`h-5 w-5 ${isLiking ? 'animate-pulse' : ''}`} />
+          </Button>
+        </div>
       </CardContent>
-      <CardFooter className="flex justify-center gap-4 p-4 pt-0">
-        {onPass && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-2 hover:border-red-500 hover:bg-red-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPass();
-            }}
-          >
-            <X className="h-6 w-6 text-red-500" />
-          </Button>
-        )}
-        
-        {onLike && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-2 hover:border-green-500 hover:bg-green-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onLike();
-            }}
-          >
-            <Heart className="h-6 w-6 text-green-500" />
-          </Button>
-        )}
-        
-        {onConnect && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-2 hover:border-blue-500 hover:bg-blue-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onConnect();
-            }}
-            disabled={isConnected || isPendingConnection}
-          >
-            {isConnected ? (
-              <Check className="h-6 w-6 text-green-500" />
-            ) : isPendingConnection ? (
-              <UserPlus className="h-6 w-6 text-amber-500" />
-            ) : (
-              <UserPlus className="h-6 w-6 text-blue-500" />
-            )}
-          </Button>
-        )}
-        
-        {onChat && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-2 hover:border-blue-500 hover:bg-blue-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onChat();
-            }}
-          >
-            <MessageSquare className="h-6 w-6 text-blue-500" />
-          </Button>
-        )}
-        
-        {onMessage && (
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-12 w-12 rounded-full border-2 hover:border-purple-500 hover:bg-purple-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMessage();
-            }}
-          >
-            <Send className="h-6 w-6 text-purple-500" />
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 };

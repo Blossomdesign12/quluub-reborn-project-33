@@ -1,25 +1,22 @@
 
 export interface User {
-  _id?: string;
+  _id: string;
   id?: string;
   username: string;
   email: string;
-  password?: string;
   fname: string;
   lname: string;
-  plan: "freemium" | "premium" | "pro" | null;
+  plan?: string;
   gender: "male" | "female";
-  dob?: Date | string;
-  startedPracticing?: Date | string;
+  dob?: string | Date;
+  startedPracticing?: string | Date;
   hidden?: boolean;
+  status?: string;
+  type?: string;
   validationToken?: string;
-  resetPasswordToken?: string;
-  resetPasswordTokenExpiration?: Date | string | null;
-  status: "active" | "inactive" | "NEW";
-  type?: "REGULAR" | "NEW";
   referralCode?: string;
   referredBy?: string;
-  referralStatus?: 'Pending' | 'Verified' | 'Rejected';
+  referralStatus?: string;
   referralStats?: {
     totalReferrals: number;
     activeReferrals: number;
@@ -40,27 +37,15 @@ export interface User {
   genotype?: string;
   summary?: string;
   workEducation?: string;
-  lastSeen?: Date | string;
+  lastSeen?: Date;
   favorites?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-  profile_pic?: string | null;
-  height?: string | null;
-  weight?: string | null;
-  revert?: string | null;
-  sect?: string | null;
-  scholarsSpeakers?: string | null;
-  dressingCovering?: string | null;
-  islamicPractice?: string | null;
-  otherDetails?: string | null;
-  traits?: string | null;
-  openToMatches?: string | null;
-  dealbreakers?: string | null;
-  icebreakers?: string | null;
-  created?: string;
-  updated?: string;
-  deleted?: string | null;
-  sessionId?: string | null;
+  traits?: string;
+  revert?: string;
+  scholarsSpeakers?: string;
+  height?: string;
+  weight?: string;
+  emailVerified?: boolean;
+  profile_pic?: string;
 }
 
 export interface LoginCredentials {
@@ -78,17 +63,20 @@ export interface SignupData {
 }
 
 export interface AuthResponse {
-  user: User;
   token: string;
+  user: User;
 }
 
-export interface Relationship {
-  id: string;
-  follower_user_id: string;
-  followed_user_id: string;
-  status: "pending" | "rejected" | "matched";
-  createdAt?: string;
-  updatedAt?: string;
+export interface ConnectionRequest {
+  _id: string;
+  relationship: {
+    id: string;
+    status: string;
+  };
+  fname: string;
+  lname: string;
+  country?: string;
+  profile_pic?: string;
 }
 
 export interface Chat {
@@ -96,24 +84,30 @@ export interface Chat {
   senderId: string;
   receiverId: string;
   message: string;
-  status: "UNREAD" | "READ";
-  created: string;
-  updated: string;
-}
-
-export interface UserActivityLog {
-  _id: string;
-  userId: string;
-  receiverId: string;
-  action: "VIEWED" | "FOLLOWED" | "REJECTED" | "WITHDREW";
-  created: string;
-}
-
-export interface WaliChat {
-  _id: string;
-  token: string;
-  wardid: string;
-  wardcontactid: string;
   createdAt: string;
-  updatedAt: string;
+  read: boolean;
+}
+
+export interface Conversation {
+  user: User;
+  lastMessage?: Chat;
+  unreadCount: number;
+}
+
+export interface MatchCardProps {
+  name: string;
+  age: number;
+  location: string;
+  photoUrl: string;
+  tags: string[];
+  userId: string;
+  onLike: () => Promise<void>;
+  onPass: () => void;
+  onMessage: () => void;
+}
+
+export interface VideoCallSettings {
+  duration: number; // in minutes
+  participants: User[];
+  callId: string;
 }
