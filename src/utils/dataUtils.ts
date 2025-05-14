@@ -1,4 +1,3 @@
-
 /**
  * Format a timestamp into a relative time string (e.g., "just now", "5 minutes ago")
  */
@@ -82,4 +81,50 @@ export const safeJsonParse = (jsonString: string | null | undefined): any => {
   } catch (e) {
     return jsonString;
   }
+};
+
+/**
+ * Parse JSON field safely
+ */
+export const parseJsonField = (jsonString: string | null | undefined): any => {
+  try {
+    if (!jsonString) return null;
+    return JSON.parse(jsonString);
+  } catch (e) {
+    return jsonString;
+  }
+};
+
+/**
+ * Convert field names to human-readable labels
+ */
+export const fieldNameToLabel = (fieldName: string): string => {
+  // Convert camelCase to Title Case with spaces
+  const result = fieldName.replace(/([A-Z])/g, ' $1');
+  return result.charAt(0).toUpperCase() + result.slice(1);
+};
+
+/**
+ * Format field values for display
+ */
+export const formatFieldValue = (value: any): string => {
+  if (value === null || value === undefined) return 'Not specified';
+  
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  
+  if (value instanceof Date) {
+    return formatDate(value);
+  }
+  
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      return String(value);
+    }
+  }
+  
+  return String(value);
 };

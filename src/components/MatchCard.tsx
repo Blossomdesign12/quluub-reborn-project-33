@@ -6,15 +6,19 @@ import ProfileImage from "./ProfileImage";
 import { MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface MatchCardProps {
+export interface MatchCardProps {
   name: string;
   age: number;
   location: string;
   photoUrl?: string;
-  matchDate: string;
+  matchDate?: string; // Make matchDate optional
+  matchPercentage?: number; // Add matchPercentage
   tags: string[];
-  bio: string;
-  onChat: () => void;
+  bio?: string; // Make bio optional
+  onChat?: () => void; // Make onChat optional
+  onLike?: () => void; // Add onLike handler
+  onPass?: () => void; // Add onPass handler
+  onMessage?: () => void; // Add onMessage handler
   userId?: string;
 }
 
@@ -24,9 +28,13 @@ const MatchCard = ({
   location,
   photoUrl,
   matchDate,
+  matchPercentage,
   tags,
   bio,
   onChat,
+  onLike,
+  onPass,
+  onMessage,
   userId
 }: MatchCardProps) => {
   const navigate = useNavigate();
@@ -37,6 +45,9 @@ const MatchCard = ({
       navigate(`/profile/${userId}`);
     }
   };
+  
+  // Use the appropriate click handler based on what's provided
+  const handleActionClick = onChat || onMessage || (() => {});
   
   return (
     <Card className="overflow-hidden h-full flex flex-col">
@@ -51,7 +62,8 @@ const MatchCard = ({
           <div>
             <h3 className="font-semibold">{name}, {age}</h3>
             <p className="text-sm text-muted-foreground">{location}</p>
-            <p className="text-xs text-muted-foreground">Matched {matchDate}</p>
+            {matchDate && <p className="text-xs text-muted-foreground">Matched {matchDate}</p>}
+            {matchPercentage && <p className="text-xs text-primary">{matchPercentage}% Match</p>}
           </div>
         </div>
       </div>
@@ -71,12 +83,25 @@ const MatchCard = ({
       </CardContent>
       
       <CardFooter className="flex justify-between gap-2 pt-2 pb-4">
-        <Button variant="outline" className="w-full" onClick={handleViewProfile}>
-          View Profile
-        </Button>
-        <Button className="w-full" onClick={onChat}>
-          <MessageSquare className="mr-2 h-4 w-4" /> Chat
-        </Button>
+        {onLike && onPass ? (
+          <>
+            <Button variant="outline" className="w-full" onClick={onPass}>
+              Pass
+            </Button>
+            <Button className="w-full" onClick={onLike}>
+              Like
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" className="w-full" onClick={handleViewProfile}>
+              View Profile
+            </Button>
+            <Button className="w-full" onClick={handleActionClick}>
+              <MessageSquare className="mr-2 h-4 w-4" /> {onChat ? "Chat" : "Message"}
+            </Button>
+          </>
+        )}
       </CardFooter>
     </Card>
   );
