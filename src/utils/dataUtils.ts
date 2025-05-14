@@ -96,3 +96,30 @@ export const parseJsonField = (jsonString: string | null | undefined): any => {
     return jsonString;
   }
 };
+
+// Format time ago from date
+export const timeAgo = (date: string | Date): string => {
+  const now = new Date();
+  const messageDate = new Date(date);
+  const diffInSeconds = Math.floor((now.getTime() - messageDate.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) return 'just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  
+  const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+  
+  // If it's today, only show the time
+  if (messageDate.toDateString() === now.toDateString()) {
+    return messageDate.toLocaleTimeString([], options);
+  }
+  
+  // If it's within the last week
+  if (diffInSeconds < 604800) {
+    return messageDate.toLocaleDateString([], { weekday: 'short' }) + ' ' + 
+           messageDate.toLocaleTimeString([], options);
+  }
+  
+  // For older messages
+  return messageDate.toLocaleDateString();
+};

@@ -7,6 +7,7 @@ import { relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
+import { calculateAge } from "@/utils/dataUtils";
 
 interface MatchesResponse {
   count: number;
@@ -46,21 +47,6 @@ const Matches = () => {
 
     fetchMatches();
   }, [toast]);
-
-  // Function to calculate age from DOB
-  const calculateAge = (dob: string | Date | undefined) => {
-    if (!dob) return null;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
 
   // Function to format match date (relative to now)
   const formatMatchDate = (date: string) => {
@@ -120,14 +106,14 @@ const Matches = () => {
               <div key={match._id}>
                 <MatchCard 
                   name={`${match.fname} ${match.lname}`}
-                  age={calculateAge(match.dob) || 0}
+                  age={calculateAge(match.dob as string) || 0}
                   location={match.country || "Location not specified"}
                   photoUrl="" // Always use icon
                   matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
                   tags={extractInterests(match)}
                   bio={match.summary || "No summary provided"}
                   onChat={() => handleStartChat(match._id!)}
-                  userId={match._id}
+                  userId={match._id || ''}
                 />
               </div>
             ))}
