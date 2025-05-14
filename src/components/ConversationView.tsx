@@ -1,20 +1,20 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Send, Video } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useNavigate } from "react-router-dom";
 import VideoCall from "./VideoCall";
-import { timeAgo } from "@/utils/dataUtils";
 
-export interface Contact {
+interface Contact {
   id: string;
   name: string;
-  photoUrl: string;
+  photoUrl?: string;
   online?: boolean;
 }
 
-export interface Message {
+interface Message {
   id: string;
   content: string;
   senderId: string;
@@ -34,118 +34,129 @@ const ConversationView = ({
   currentUserId,
   onSendMessage,
 }: ConversationViewProps) => {
-  const [message, setMessage] = useState("");
+  const [messageInput, setMessageInput] = useState("");
+  const [isInCall, setIsInCall] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isInVideoCall, setIsInVideoCall] = useState(false);
+  const navigate = useNavigate();
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      onSendMessage(message.trim());
-      setMessage("");
+  const handleSend = () => {
+    if (messageInput.trim()) {
+      onSendMessage(messageInput.trim());
+      setMessageInput("");
     }
   };
 
-  const startVideoCall = () => {
-    setIsInVideoCall(true);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
-  const endVideoCall = () => {
-    setIsInVideoCall(false);
+  const startCall = () => {
+    setIsInCall(true);
+  };
+
+  const endCall = () => {
+    setIsInCall(false);
   };
 
   return (
     <div className="flex flex-col h-full w-full">
-      {/* Header */}
-      <div className="p-4 border-b flex justify-between items-center">
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={contact.photoUrl} alt={contact.name} />
-            <AvatarFallback>
-              {contact.name.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-medium">{contact.name}</h3>
-            <p className="text-xs text-muted-foreground">
-              {contact.online ? "Online" : "Offline"}
-            </p>
-          </div>
-        </div>
-        
-        <Button 
-          variant="ghost" 
-          size="icon"
-          onClick={startVideoCall}
-          title="Start video call"
-        >
-          <Video className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Video Call Overlay */}
-      {isInVideoCall && (
-        <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <VideoCall 
-            userId={contact.id}
-            username={contact.name}
-            onEndCall={endVideoCall}
-            timeLimit={300} // 5 minutes (300 seconds)
-          />
-        </div>
-      )}
-
-      {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
-          const isSentByMe = msg.senderId === currentUserId;
-          return (
-            <div
-              key={msg.id}
-              className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-lg p-3 
-                ${
-                  isSentByMe
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-              >
-                <p className="text-sm break-words">{msg.content}</p>
-                <span className="text-xs opacity-70 block text-right mt-1">
-                  {timeAgo(msg.timestamp)}
-                </span>
+      {isInCall ? (
+        <VideoCall
+          userId={contact.id}
+          username={contact.name}
+          onEndCall={endCall}
+        />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarImage src={contact.photoUrl || ""} />
+                <AvatarFallback>
+                  {contact.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="font-medium">{contact.name}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {contact.online ? "Online" : "Offline"}
+                </p>
               </div>
             </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
-      </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={startCall}
+              title="Start video call"
+            >
+              <Video className="h-5 w-5" />
+            </Button>
+          </div>
 
-      {/* Message Input */}
-      <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="min-h-[45px] resize-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
-        />
-        <Button type="submit" size="icon">
-          <Send className="h-5 w-5" />
-        </Button>
-      </form>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No messages yet. Start the conversation!
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.senderId === currentUserId
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[70%] px-4 py-2 rounded-lg ${
+                      message.senderId === currentUserId
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
+                    <p className="break-words">{message.content}</p>
+                    <p className="text-xs opacity-70 mt-1 text-right">
+                      {message.timestamp}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Message input */}
+          <div className="p-4 border-t">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type your message..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                className="flex-1"
+              />
+              <Button onClick={handleSend} disabled={!messageInput.trim()}>
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

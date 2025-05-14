@@ -1,25 +1,21 @@
 
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import ProfileImage from "./ProfileImage";
 import { MessageSquare } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 export interface MatchCardProps {
   name: string;
   age: number;
   location: string;
   photoUrl?: string;
-  matchDate?: string; // Make matchDate optional
-  matchPercentage?: number; // Add matchPercentage
+  matchDate: string;
   tags: string[];
-  bio?: string; // Make bio optional
-  onChat?: () => void; // Make onChat optional
-  onLike?: () => void; // Add onLike handler
-  onPass?: () => void; // Add onPass handler
-  onMessage?: () => void; // Add onMessage handler
-  userId?: string;
+  bio: string;
+  onChat: () => void;
+  userId: string | undefined;
 }
 
 const MatchCard = ({
@@ -28,81 +24,44 @@ const MatchCard = ({
   location,
   photoUrl,
   matchDate,
-  matchPercentage,
   tags,
   bio,
   onChat,
-  onLike,
-  onPass,
-  onMessage,
-  userId
+  userId,
 }: MatchCardProps) => {
-  const navigate = useNavigate();
-  
-  // Handle view profile click
-  const handleViewProfile = () => {
-    if (userId) {
-      navigate(`/profile/${userId}`);
-    }
-  };
-  
-  // Use the appropriate click handler based on what's provided
-  const handleActionClick = onChat || onMessage || (() => {});
-  
   return (
-    <Card className="overflow-hidden h-full flex flex-col">
-      <div className="relative pt-4 px-4">
-        <div className="flex items-center gap-3">
-          <ProfileImage
-            src={photoUrl || ""}
-            alt={name}
-            fallback={name.substring(0, 2).toUpperCase()}
-            size="lg"
-          />
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+      <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-4">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 border-2 border-primary/30">
+            {photoUrl ? (
+              <AvatarImage src={photoUrl} alt={name} />
+            ) : (
+              <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+            )}
+          </Avatar>
           <div>
-            <h3 className="font-semibold">{name}, {age}</h3>
+            <h3 className="font-medium text-lg">{name}, {age}</h3>
             <p className="text-sm text-muted-foreground">{location}</p>
-            {matchDate && <p className="text-xs text-muted-foreground">Matched {matchDate}</p>}
-            {matchPercentage && <p className="text-xs text-primary">{matchPercentage}% Match</p>}
+            <p className="text-xs mt-1">Matched {matchDate}</p>
           </div>
         </div>
       </div>
       
-      <CardContent className="flex-1 pt-4">
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {tags.map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+      <div className="p-4">
+        <div className="flex gap-2 mb-3 flex-wrap">
+          {tags.map((tag, i) => (
+            <Badge key={i} variant="secondary">{tag}</Badge>
+          ))}
+        </div>
         
-        <p className="text-sm line-clamp-3">{bio || "No bio available"}</p>
-      </CardContent>
-      
-      <CardFooter className="flex justify-between gap-2 pt-2 pb-4">
-        {onLike && onPass ? (
-          <>
-            <Button variant="outline" className="w-full" onClick={onPass}>
-              Pass
-            </Button>
-            <Button className="w-full" onClick={onLike}>
-              Like
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" className="w-full" onClick={handleViewProfile}>
-              View Profile
-            </Button>
-            <Button className="w-full" onClick={handleActionClick}>
-              <MessageSquare className="mr-2 h-4 w-4" /> {onChat ? "Chat" : "Message"}
-            </Button>
-          </>
-        )}
-      </CardFooter>
+        <p className="text-sm mb-4 line-clamp-3">{bio}</p>
+        
+        <Button onClick={onChat} className="w-full">
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Start Chatting
+        </Button>
+      </div>
     </Card>
   );
 };

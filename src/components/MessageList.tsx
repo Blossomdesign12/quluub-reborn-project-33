@@ -1,14 +1,15 @@
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Conversation {
   id: string;
   name: string;
-  photoUrl: string;
+  photoUrl?: string;
   lastMessage: string;
   timestamp: string;
   unread: boolean;
@@ -20,70 +21,77 @@ interface MessageListProps {
   onSelectConversation: (id: string) => void;
 }
 
-const MessageList = ({ conversations, selectedId, onSelectConversation }: MessageListProps) => {
-  const [searchQuery, setSearchQuery] = useState("");
+const MessageList = ({
+  conversations,
+  selectedId,
+  onSelectConversation,
+}: MessageListProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredConversations = conversations.filter((conversation) =>
-    conversation.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter conversations based on search term
+  const filteredConversations = conversations.filter((conv) =>
+    conv.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div>
-      <div className="p-3 sticky top-0 bg-background z-10">
+    <div className="h-full flex flex-col">
+      {/* Search input */}
+      <div className="px-3 py-2 border-b">
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search conversations..."
             className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
       </div>
 
-      <div className="divide-y">
+      {/* Conversations list */}
+      <div className="flex-1 overflow-y-auto">
         {filteredConversations.length > 0 ? (
           filteredConversations.map((conversation) => (
             <div
               key={conversation.id}
               className={cn(
-                "flex items-center p-3 cursor-pointer hover:bg-muted/50 transition-colors",
-                selectedId === conversation.id && "bg-muted",
-                conversation.unread && "bg-primary/5"
+                "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/50 border-b border-border/50",
+                selectedId === conversation.id && "bg-accent"
               )}
               onClick={() => onSelectConversation(conversation.id)}
             >
-              <Avatar className="h-10 w-10 mr-3">
-                <AvatarImage src={conversation.photoUrl} alt={conversation.name} />
+              <Avatar>
+                <AvatarImage src={conversation.photoUrl || ""} />
                 <AvatarFallback>
-                  {conversation.name.charAt(0)}
+                  {conversation.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-baseline">
+                <div className="flex justify-between items-center">
                   <h3 className="font-medium truncate">{conversation.name}</h3>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                  <span className="text-xs text-muted-foreground">
                     {conversation.timestamp}
                   </span>
                 </div>
-                <p
-                  className={cn(
-                    "text-sm truncate",
-                    conversation.unread
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground"
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground truncate">
+                    {conversation.lastMessage}
+                  </p>
+                  {conversation.unread && (
+                    <Badge variant="default" className="ml-2">
+                      New
+                    </Badge>
                   )}
-                >
-                  {conversation.lastMessage}
-                </p>
+                </div>
               </div>
-              {conversation.unread && (
-                <div className="ml-2 h-2 w-2 rounded-full bg-primary" />
-              )}
             </div>
           ))
         ) : (
-          <div className="p-4 text-center text-muted-foreground">
+          <div className="flex items-center justify-center h-20 text-muted-foreground">
             No conversations found
           </div>
         )}
