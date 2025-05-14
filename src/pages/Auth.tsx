@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -23,7 +22,6 @@ const Auth = () => {
       
       toast({
         title: "Login successful",
-        description: "Welcome back to Quluub!",
       });
       
       navigate(from);
@@ -32,7 +30,6 @@ const Auth = () => {
       
       toast({
         title: "Login failed",
-        description: error?.response?.data?.message || "Invalid credentials",
         variant: "destructive",
       });
       
@@ -60,7 +57,6 @@ const Auth = () => {
       
       toast({
         title: "Account created successfully",
-        description: "Welcome to Quluub!",
       });
       
       navigate("/browse");
@@ -69,7 +65,6 @@ const Auth = () => {
       
       toast({
         title: "Signup failed",
-        description: error?.response?.data?.message || "Email may already be in use",
         variant: "destructive",
       });
       

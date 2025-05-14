@@ -36,7 +36,6 @@ export function FeedbackFloater({ onClose }: FeedbackFloaterProps) {
     // In a real app, this would send data to an API
     toast({
       title: "Feedback submitted",
-      description: "Thank you for your valuable feedback!",
     });
     
     onClose();
