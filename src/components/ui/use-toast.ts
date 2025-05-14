@@ -1,5 +1,6 @@
 
-// Re-export from the hooks directory
-export { useToast, toast } from "@/hooks/use-toast";
-export type { ToasterToast } from "@/hooks/use-toast";
-export type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { useToast as useShadcnToast, toast as shadcnToast } from "@/hooks/use-toast";
+
+// Re-export the toast components from the hooks directory
+export const useToast = useShadcnToast;
+export const toast = shadcnToast;

@@ -1,90 +1,102 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
 
-const FeedbackFloater = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const { toast } = useToast();
+interface FeedbackFloaterProps {
+  onClose: () => void;
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+export function FeedbackFloater({ onClose }: FeedbackFloaterProps) {
+  const [rating, setRating] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  const [comment, setComment] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Animate in after a short delay
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 300);
     
-    if (!feedback.trim()) return;
-    
-    try {
-      setIsSending(true);
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleSubmit = () => {
+    if (!rating) {
       toast({
-        title: "Feedback sent",
-        description: "Thank you for your feedback!",
-      });
-      
-      setFeedback("");
-      setIsOpen(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send feedback. Please try again.",
+        title: "Please select a rating",
         variant: "destructive",
       });
-    } finally {
-      setIsSending(false);
+      return;
     }
+    
+    // In a real app, this would send data to an API
+    toast({
+      title: "Feedback submitted",
+      description: "Thank you for your valuable feedback!",
+    });
+    
+    onClose();
   };
 
   return (
-    <div className="fixed bottom-20 right-4 z-50">
-      {!isOpen ? (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="h-12 w-12 rounded-full shadow-lg"
-          size="icon"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
-      ) : (
-        <div className="bg-background border rounded-lg shadow-lg p-4 w-80">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-medium">Send Feedback</h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <form onSubmit={handleSubmit}>
-            <Textarea
-              placeholder="Share your thoughts or report an issue..."
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              className="min-h-[100px] mb-3"
-              disabled={isSending}
+    <div
+      className={`fixed bottom-4 right-4 max-w-sm bg-white p-6 rounded-lg shadow-lg border border-primary/20 transform transition-all duration-300 ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+      } z-50`}
+    >
+      <button 
+        onClick={onClose}
+        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+      >
+        ✕
+      </button>
+      
+      <h3 className="text-lg font-semibold mb-4">Rate Your Experience</h3>
+      <p className="text-muted-foreground mb-3 text-sm">
+        Your feedback helps us improve Quluub for the Muslim community.
+      </p>
+      
+      <div className="flex justify-center mb-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setRating(star)}
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(null)}
+            className="focus:outline-none"
+          >
+            <Star
+              className={`w-8 h-8 ${
+                (hover || rating) && star <= (hover || rating!)
+                  ? 'fill-yellow-400 text-yellow-400'
+                  : 'text-gray-300'
+              }`}
             />
-            
-            <div className="flex justify-end">
-              <Button
-                type="submit"
-                disabled={isSending || !feedback.trim()}
-              >
-                {isSending ? "Sending..." : "Send"}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
+          </button>
+        ))}
+      </div>
+      
+      <Textarea
+        placeholder="Share your thoughts with us (optional)"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        className="mb-4 text-sm"
+        rows={3}
+      />
+      
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={onClose}>
+          Later
+        </Button>
+        <Button onClick={handleSubmit}>
+          Submit Feedback
+        </Button>
+      </div>
     </div>
   );
-};
-
-export default FeedbackFloater;
+}

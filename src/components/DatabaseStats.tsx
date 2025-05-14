@@ -1,14 +1,45 @@
 
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const DatabaseStats = () => {
-  // This is a simple placeholder component
+interface StatsCardProps {
+  title: string;
+  value: number | string;
+  description?: string;
+  icon?: React.ReactNode;
+}
+
+const StatsCard = ({ title, value, description, icon }: StatsCardProps) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{value}</div>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+    </CardContent>
+  </Card>
+);
+
+interface DatabaseStatsProps {
+  totalUsers: number;
+  activeUsers: number;
+  totalMatches: number;
+  unreadMessages: number;
+}
+
+export const DatabaseStats = ({
+  totalUsers,
+  activeUsers,
+  totalMatches,
+  unreadMessages
+}: DatabaseStatsProps) => {
   return (
-    <Card className="p-4">
-      <h3 className="font-medium mb-2">Database Stats</h3>
-      <div className="text-sm text-muted-foreground">
-        Connected to database
-      </div>
-    </Card>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StatsCard title="Total Users" value={totalUsers} description="Registered accounts" />
+      <StatsCard title="Active Users" value={activeUsers} description="Active in last 30 days" />
+      <StatsCard title="Total Matches" value={totalMatches} description="Successful connections" />
+      <StatsCard title="Unread Messages" value={unreadMessages} description="Pending communications" />
+    </div>
   );
 };
