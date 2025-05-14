@@ -1,25 +1,63 @@
 
 /**
- * Parse a JSON string safely
- * @param jsonString The string that might contain JSON
- * @returns Parsed object or array, or the original string if not valid JSON
+ * Format a timestamp into a relative time string (e.g., "just now", "5 minutes ago")
  */
-export const parseJsonField = (jsonString: string | null | undefined) => {
-  if (!jsonString) return null;
-  try {
-    return JSON.parse(jsonString);
-  } catch (e) {
-    // If not valid JSON, return the original string
-    return jsonString;
+export const timeAgo = (timestamp: string | Date): string => {
+  if (!timestamp) return '';
+  
+  const date = new Date(timestamp);
+  const now = new Date();
+  const secondsAgo = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (secondsAgo < 60) {
+    return 'just now';
   }
+  
+  const minutesAgo = Math.floor(secondsAgo / 60);
+  if (minutesAgo < 60) {
+    return minutesAgo === 1 ? '1 minute ago' : `${minutesAgo} minutes ago`;
+  }
+  
+  const hoursAgo = Math.floor(minutesAgo / 60);
+  if (hoursAgo < 24) {
+    return hoursAgo === 1 ? '1 hour ago' : `${hoursAgo} hours ago`;
+  }
+  
+  const daysAgo = Math.floor(hoursAgo / 24);
+  if (daysAgo < 7) {
+    return daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
+  }
+  
+  const weeksAgo = Math.floor(daysAgo / 7);
+  if (weeksAgo < 4) {
+    return weeksAgo === 1 ? '1 week ago' : `${weeksAgo} weeks ago`;
+  }
+  
+  const monthsAgo = Math.floor(daysAgo / 30);
+  if (monthsAgo < 12) {
+    return monthsAgo === 1 ? '1 month ago' : `${monthsAgo} months ago`;
+  }
+  
+  const yearsAgo = Math.floor(daysAgo / 365);
+  return yearsAgo === 1 ? '1 year ago' : `${yearsAgo} years ago`;
 };
 
 /**
- * Calculate age from a date of birth
- * @param dob Date of birth
- * @returns Age as a number or null if no valid date
+ * Format a date to a readable string
  */
-export const calculateAge = (dob: Date | string | undefined) => {
+export const formatDate = (date: string | Date | undefined): string => {
+  if (!date) return 'Not specified';
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+/**
+ * Calculate age from date of birth
+ */
+export const calculateAge = (dob: string | Date | undefined): number | null => {
   if (!dob) return null;
   
   const birthDate = new Date(dob);
@@ -35,109 +73,13 @@ export const calculateAge = (dob: Date | string | undefined) => {
 };
 
 /**
- * Format field values for display
- * @param value The field value
- * @returns Formatted value for display
+ * Try to parse a JSON string to an object, with fallback to string/array
  */
-export const formatFieldValue = (value: any): string => {
-  if (value === undefined || value === null) return 'Not specified';
-  
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  
-  if (value instanceof Date) return value.toLocaleDateString();
-  
-  if (typeof value === 'string') {
-    // Try to parse as JSON
-    const parsedValue = parseJsonField(value);
-    if (Array.isArray(parsedValue)) {
-      return parsedValue.join(', ');
-    }
-    if (parsedValue !== value && typeof parsedValue === 'object') {
-      // It's a parsed object
-      return Object.entries(parsedValue)
-        .filter(([_, val]) => val)
-        .map(([key, val]) => `${key}: ${val}`)
-        .join(', ');
-    }
-    return value;
+export const safeJsonParse = (jsonString: string | null | undefined): any => {
+  if (!jsonString) return null;
+  try {
+    return JSON.parse(jsonString);
+  } catch (e) {
+    return jsonString;
   }
-  
-  if (Array.isArray(value)) {
-    return value.join(', ');
-  }
-  
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  
-  return String(value);
-};
-
-/**
- * Transform MongoDB/Mongoose field names to display labels
- * @param fieldName The database field name
- * @returns Human-readable label
- */
-export const fieldNameToLabel = (fieldName: string): string => {
-  // Special cases
-  const specialCases: Record<string, string> = {
-    'fname': 'First Name',
-    'lname': 'Last Name',
-    'dob': 'Date of Birth',
-    'patternOfSalaah': 'Pattern of Salah',
-    'waliDetails': 'Wali Details',
-  };
-  
-  if (specialCases[fieldName]) {
-    return specialCases[fieldName];
-  }
-  
-  // General case: convert camelCase or snake_case to Title Case
-  return fieldName
-    // Add spaces between camelCase
-    .replace(/([A-Z])/g, ' $1')
-    // Replace underscores with spaces
-    .replace(/_/g, ' ')
-    // Capitalize first letter
-    .replace(/^./, str => str.toUpperCase());
-};
-
-/**
- * Format time since a date (e.g., "3 days ago")
- * @param date The date to format
- * @returns Formatted time string
- */
-export const timeAgo = (date: Date | string | undefined): string => {
-  if (!date) return 'Never';
-  
-  const now = new Date();
-  const pastDate = new Date(date);
-  const seconds = Math.floor((now.getTime() - pastDate.getTime()) / 1000);
-  
-  let interval = Math.floor(seconds / 31536000);
-  if (interval >= 1) {
-    return interval === 1 ? '1 year ago' : `${interval} years ago`;
-  }
-  
-  interval = Math.floor(seconds / 2592000);
-  if (interval >= 1) {
-    return interval === 1 ? '1 month ago' : `${interval} months ago`;
-  }
-  
-  interval = Math.floor(seconds / 86400);
-  if (interval >= 1) {
-    return interval === 1 ? '1 day ago' : `${interval} days ago`;
-  }
-  
-  interval = Math.floor(seconds / 3600);
-  if (interval >= 1) {
-    return interval === 1 ? '1 hour ago' : `${interval} hours ago`;
-  }
-  
-  interval = Math.floor(seconds / 60);
-  if (interval >= 1) {
-    return interval === 1 ? '1 minute ago' : `${interval} minutes ago`;
-  }
-  
-  return seconds < 10 ? 'just now' : `${Math.floor(seconds)} seconds ago`;
 };

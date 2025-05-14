@@ -1,44 +1,43 @@
 
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface ProfileImageProps {
-  src: string;
+  src: string | null | undefined;
   alt: string;
-  fallback?: string;
+  fallback: string;
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
 }
 
-const ProfileImage = ({ 
-  src, 
-  alt, 
-  fallback, 
-  className = "", 
-  size = "md" 
+const ProfileImage = ({
+  src,
+  alt,
+  fallback,
+  size = "md",
+  className,
 }: ProfileImageProps) => {
-  const [error, setError] = useState(false);
-  
+  // Size classes mapping
   const sizeClasses = {
-    sm: "h-10 w-10",
-    md: "h-16 w-16",
-    lg: "h-24 w-24",
-    xl: "h-32 w-32"
+    xs: "h-6 w-6",
+    sm: "h-8 w-8",
+    md: "h-10 w-10",
+    lg: "h-16 w-16",
+    xl: "h-24 w-24",
   };
-  
-  const initials = fallback || alt.substring(0, 2).toUpperCase();
-  
-  // Use a default placeholder if the image URL is empty or invalid
-  const imageSrc = (src && src.trim() !== "") ? src : "/placeholder.svg";
-  
+
+  // Modify fallback text based on size
+  const getFallback = () => {
+    if (size === "xs" || size === "sm") {
+      return fallback.charAt(0);
+    }
+    return fallback.length > 2 ? fallback.substring(0, 2) : fallback;
+  };
+
   return (
-    <Avatar className={`${sizeClasses[size]} ${className}`}>
-      <AvatarImage 
-        src={error ? "/placeholder.svg" : imageSrc} 
-        alt={alt}
-        onError={() => setError(true)} 
-      />
-      <AvatarFallback>{initials}</AvatarFallback>
+    <Avatar className={cn(sizeClasses[size], className)}>
+      <AvatarImage src={src || ""} alt={alt} />
+      <AvatarFallback>{getFallback()}</AvatarFallback>
     </Avatar>
   );
 };
