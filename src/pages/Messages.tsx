@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
+import VideoCallRestriction from "@/components/VideoCallRestriction";
 import { chatService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -180,7 +180,7 @@ const Messages = () => {
         ) : conversations.length === 0 ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">You don't have any conversations yet.</p>
-            <p className="text-muted-foreground mt-2">Start browsing to find someone to chat with!</p>
+            <p className="text-muted-foreground mt-2">Accept connection requests to start chatting!</p>
           </Card>
         ) : (
           <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
@@ -199,19 +199,36 @@ const Messages = () => {
             </div>
             
             {/* Conversation view */}
-            <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden">
+            <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
               {selectedConversation ? (
-                <ConversationView
-                  contact={{
-                    id: selectedConversation._id,
-                    name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
-                    photoUrl: "", // We need to add profile photo support
-                    online: false // We need to add online status
-                  }}
-                  messages={formattedMessages}
-                  currentUserId={user?._id || ""}
-                  onSendMessage={handleSendMessage}
-                />
+                <>
+                  <div className="flex-1">
+                    <ConversationView
+                      contact={{
+                        id: selectedConversation._id,
+                        name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
+                        photoUrl: selectedConversation.userDetails.profile_pic || "",
+                        online: false
+                      }}
+                      messages={formattedMessages}
+                      currentUserId={user?._id || ""}
+                      onSendMessage={handleSendMessage}
+                    />
+                  </div>
+                  
+                  {/* Video Call Section */}
+                  <div className="border-t p-4">
+                    <VideoCallRestriction 
+                      user={user!}
+                      onStartCall={() => {
+                        toast({
+                          title: "Video Call Started",
+                          description: "You have 5 minutes for this call",
+                        });
+                      }}
+                    />
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full w-full">
                   <p className="text-muted-foreground">

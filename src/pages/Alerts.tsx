@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -7,63 +7,175 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import ProfileImage from "@/components/ProfileImage";
 import { useToast } from "@/hooks/use-toast";
+import { relationshipService } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
+import { timeAgo } from "@/utils/dataUtils";
+
+interface ConnectionRequest {
+  _id: string;
+  relationship: {
+    id: string;
+    status: string;
+    createdAt?: string;
+  };
+  fname: string;
+  lname: string;
+  country?: string;
+  profile_pic?: string;
+  kunya?: string;
+}
+
+interface Notification {
+  id: string;
+  type: 'connection_request' | 'connection_accepted' | 'message';
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  user?: {
+    name: string;
+    photo?: string;
+  };
+}
 
 const Alerts = () => {
+  const { user } = useAuth();
   const [showConnectionRequests, setShowConnectionRequests] = useState(true);
   const [showNotifications, setShowNotifications] = useState(true);
+  const [connectionRequests, setConnectionRequests] = useState<ConnectionRequest[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // In a real app, these would come from an API
-  const connectionRequests = [];
+  // Fetch connection requests and matches
+  const fetchConnectionData = async () => {
+    try {
+      setLoading(true);
+      
+      // Get pending connection requests (people who want to connect with me)
+      const pendingResponse = await relationshipService.getPendingRequests();
+      console.log("Pending requests response:", pendingResponse);
+      
+      if (pendingResponse && pendingResponse.requests) {
+        setConnectionRequests(pendingResponse.requests);
+      }
 
-  const notifications = [
-    {
-      id: "1",
-      type: "match",
-      title: "New Match!",
-      description: "You and Sarah matched. Say hello!",
-      time: "Just now",
-      read: false
-    },
-    {
-      id: "2",
-      type: "message",
-      title: "New Message",
-      description: "Alex sent you a message: 'Hi there! How are you doing today?'",
-      time: "2 hours ago",
-      read: false
-    },
-    {
-      id: "3",
-      type: "like",
-      title: "Profile Like",
-      description: "Jamie liked your profile.",
-      time: "Yesterday",
-      read: true
-    },
-    {
-      id: "4",
-      type: "view",
-      title: "Profile View",
-      description: "Taylor viewed your profile.",
-      time: "2 days ago",
-      read: true
+      // Get matches to show as notifications for accepted connections
+      const matchesResponse = await relationshipService.getMatches();
+      console.log("Matches response:", matchesResponse);
+      
+      if (matchesResponse && matchesResponse.matches) {
+        const matchNotifications: Notification[] = matchesResponse.matches.map((match: any) => ({
+          id: `match_${match._id}`,
+          type: 'connection_accepted',
+          title: 'Connection Accepted!',
+          description: `You and ${match.fname} ${match.lname} are now connected. You can start chatting!`,
+          time: timeAgo(new Date(match.relationship?.createdAt || match.relationship?.updatedAt || Date.now())),
+          read: false,
+          user: {
+            name: `${match.fname} ${match.lname}`,
+            photo: match.profile_pic
+          }
+        }));
+        
+        setNotifications(matchNotifications);
+      }
+      
+    } catch (error) {
+      console.error("Failed to fetch connection data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load connection requests",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const handleAcceptRequest = (id: string) => {
-    toast({
-      title: "Request Accepted",
-      description: "Connection request has been accepted.",
-    });
   };
 
-  const handleDeclineRequest = (id: string) => {
-    toast({
-      title: "Request Declined",
-      description: "Connection request has been declined.",
-    });
+  useEffect(() => {
+    fetchConnectionData();
+    
+    // Refresh every 30 seconds for real-time updates
+    const interval = setInterval(fetchConnectionData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAcceptRequest = async (relationshipId: string, userId: string) => {
+    try {
+      await relationshipService.respondToRequest(relationshipId, 'matched');
+      
+      // Remove from connection requests
+      setConnectionRequests(prev => 
+        prev.filter(req => req.relationship.id !== relationshipId)
+      );
+      
+      // Add to notifications as accepted connection
+      const acceptedUser = connectionRequests.find(req => req.relationship.id === relationshipId);
+      if (acceptedUser) {
+        const newNotification: Notification = {
+          id: `accepted_${relationshipId}`,
+          type: 'connection_accepted',
+          title: 'Connection Accepted!',
+          description: `You and ${acceptedUser.fname} ${acceptedUser.lname} are now connected. You can start chatting!`,
+          time: 'Just now',
+          read: false,
+          user: {
+            name: `${acceptedUser.fname} ${acceptedUser.lname}`,
+            photo: acceptedUser.profile_pic
+          }
+        };
+        
+        setNotifications(prev => [newNotification, ...prev]);
+      }
+      
+      toast({
+        title: "Connection Accepted",
+        description: "You can now message each other",
+      });
+    } catch (error) {
+      console.error("Failed to accept connection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to accept connection request",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleDeclineRequest = async (relationshipId: string) => {
+    try {
+      await relationshipService.respondToRequest(relationshipId, 'rejected');
+      
+      // Remove from connection requests
+      setConnectionRequests(prev => 
+        prev.filter(req => req.relationship.id !== relationshipId)
+      );
+      
+      toast({
+        title: "Connection Declined",
+        description: "The request has been declined",
+      });
+    } catch (error) {
+      console.error("Failed to reject connection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to decline connection request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <div className="container py-6 flex justify-center items-center h-[calc(100vh-200px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+        <Navbar />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -93,32 +205,44 @@ const Alerts = () => {
             <div className="space-y-4">
               {connectionRequests.length > 0 ? (
                 connectionRequests.map(request => (
-                  <Card key={request.id} className="overflow-hidden">
+                  <Card key={request._id} className="overflow-hidden">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <ProfileImage
-                            src=""
-                            alt="User"
-                            fallback="U"
+                            src={request.profile_pic || ""}
+                            alt={`${request.fname} ${request.lname}`}
+                            fallback={`${request.fname?.charAt(0)}${request.lname?.charAt(0)}`}
                             size="md"
                           />
                           <div>
-                            <h3 className="font-medium">User Name</h3>
-                            <p className="text-sm text-muted-foreground">Location</p>
+                            <h3 className="font-medium">
+                              {request.fname} {request.lname}
+                              {request.kunya && (
+                                <span className="text-sm text-muted-foreground ml-1">
+                                  ({request.kunya})
+                                </span>
+                              )}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {request.country || "Unknown location"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {timeAgo(new Date(request.relationship.createdAt || Date.now()))}
+                            </p>
                           </div>
                         </div>
                         <div className="flex space-x-2">
                           <Button 
                             size="sm" 
                             variant="outline" 
-                            onClick={() => handleDeclineRequest(request.id)}
+                            onClick={() => handleDeclineRequest(request.relationship.id)}
                           >
                             Decline
                           </Button>
                           <Button 
                             size="sm"
-                            onClick={() => handleAcceptRequest(request.id)}
+                            onClick={() => handleAcceptRequest(request.relationship.id, request._id)}
                           >
                             Accept
                           </Button>
@@ -166,12 +290,22 @@ const Alerts = () => {
                     variant={notification.read ? "default" : "default"}
                     className={notification.read ? "bg-background" : "bg-primary/5 border-primary/20"}
                   >
-                    <div className="flex justify-between">
-                      <div>
-                        <AlertTitle className="font-semibold">{notification.title}</AlertTitle>
-                        <AlertDescription className="text-muted-foreground">
-                          {notification.description}
-                        </AlertDescription>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-start space-x-3">
+                        {notification.user?.photo && (
+                          <ProfileImage
+                            src={notification.user.photo}
+                            alt={notification.user.name}
+                            fallback={notification.user.name.split(' ').map(n => n[0]).join('')}
+                            size="sm"
+                          />
+                        )}
+                        <div>
+                          <AlertTitle className="font-semibold">{notification.title}</AlertTitle>
+                          <AlertDescription className="text-muted-foreground">
+                            {notification.description}
+                          </AlertDescription>
+                        </div>
                       </div>
                       <div className="text-xs text-muted-foreground whitespace-nowrap ml-4">
                         {notification.time}
