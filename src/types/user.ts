@@ -1,4 +1,3 @@
-
 export interface User {
   _id: string;
   id?: string;
@@ -6,14 +5,16 @@ export interface User {
   email: string;
   fname: string;
   lname: string;
-  plan?: string;
+  plan?: string | null;
   gender: "male" | "female";
-  dob?: string | Date;
-  startedPracticing?: string | Date;
-  hidden?: boolean;
+  dob?: string | Date | null;
+  startedPracticing?: string | Date | null;
+  hidden?: boolean | null;
   status?: string;
   type?: string;
   validationToken?: string;
+  resetPasswordToken?: string;
+  resetPasswordTokenExpiration?: Date | null;
   referralCode?: string;
   referredBy?: string;
   referralStatus?: string;
@@ -23,37 +24,41 @@ export interface User {
     completedReferrals: number;
   };
   videoCallCredits?: number;
-  waliDetails?: string;
+  waliDetails?: string; // JSON string
   kunya?: string;
   nationality?: string;
   country?: string;
   region?: string;
-  build?: string;
-  appearance?: string;
+  build?: string | null;
+  appearance?: string | null;
   maritalStatus?: string;
   noOfChildren?: string;
-  ethnicity?: string;
+  ethnicity?: string; // JSON string array
   patternOfSalaah?: string;
-  genotype?: string;
+  genotype?: string | null;
   summary?: string;
   workEducation?: string;
   lastSeen?: Date;
   favorites?: string[];
-  traits?: string;
+  traits?: string; // JSON string array
   revert?: string;
   scholarsSpeakers?: string;
-  height?: string;
-  weight?: string;
+  height?: string | null;
+  weight?: string | null;
   emailVerified?: boolean;
-  profile_pic?: string;
-  sect?: string;
-  dressingCovering?: string;
-  islamicPractice?: string;
-  otherDetails?: string;
-  openToMatches?: string;
-  dealbreakers?: string;
-  icebreakers?: string;
-  interests?: string;
+  profile_pic?: string | null;
+  sect?: string | null;
+  dressingCovering?: string | null;
+  islamicPractice?: string | null;
+  otherDetails?: string | null;
+  openToMatches?: string | null;
+  dealbreakers?: string | null;
+  icebreakers?: string | null;
+  interests?: string; // JSON string array
+  sessionId?: string | null;
+  created?: string;
+  updated?: string;
+  deleted?: string | null;
 }
 
 export interface LoginCredentials {
@@ -112,6 +117,9 @@ export interface MatchCardProps {
   onLike: () => Promise<void>;
   onPass: () => void;
   onMessage: () => void;
+  matchDate?: string;
+  bio?: string;
+  onChat?: () => void;
 }
 
 export interface VideoCallSettings {

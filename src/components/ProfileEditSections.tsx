@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { parseJsonField } from "@/utils/dataUtils";
+import Navbar from "@/components/Navbar";
 
 interface ProfileEditSectionsProps {
   user: User;
@@ -23,6 +25,32 @@ interface ProfileEditSectionsProps {
 
 const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProps) => {
   const [currentSection, setCurrentSection] = useState(0);
+  
+  // Parse JSON fields from database
+  const parseEthnicity = () => {
+    try {
+      return Array.isArray(parseJsonField(user.ethnicity)) ? parseJsonField(user.ethnicity) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const parseTraits = () => {
+    try {
+      return Array.isArray(parseJsonField(user.traits)) ? parseJsonField(user.traits) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const parseWaliDetails = () => {
+    try {
+      return parseJsonField(user.waliDetails) || { name: "", email: "", whatsapp: "", telegram: "", otherNumber: "" };
+    } catch {
+      return { name: "", email: "", whatsapp: "", telegram: "", otherNumber: "" };
+    }
+  };
+
   const [formData, setFormData] = useState({
     kunya: user.kunya || "",
     dob: user.dob ? new Date(user.dob) : undefined,
@@ -50,10 +78,12 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
     openToMatches: user.openToMatches || "",
     dealbreakers: user.dealbreakers || "",
     icebreakers: user.icebreakers || "",
+    waliDetails: parseWaliDetails(),
   });
 
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
+  const [selectedTraits, setSelectedTraits] = useState<string[]>(parseTraits());
+  const [selectedEthnicity, setSelectedEthnicity] = useState<string[]>(parseEthnicity());
 
   const sections = [
     "Basic Info",
@@ -90,7 +120,7 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
     "Cowboy", "Passionate", "Palm Down Hand", "Handshaker", "Selfie Connoisseur", "Intelligent", "Good with Kids",
     "Beard", "Good Teeth", "Bald", "Deaf", "Astronaut", "Firefighter", "Scientist", "Mechanic", "Judge", "Chef",
     "Artist", "Pilot", "Farmer", "Graduate", "Teacher", "Programmer", "Businessman", "Nurse", "Weightlifter",
-    "Talkative", "Graceful", "Flamboyant", "Tall", "Dangerous", "Sunny", "Wavy", "Winner", "Good Talker"
+    "Talkative", "Graceful", "Flamboyant", "Tall", "Dangerous", "Sunny", "Wavy", "Winner", "Good Talker", "Masjid Goer"
   ];
 
   const handleInputChange = (field: string, value: any) => {
@@ -113,11 +143,21 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
     );
   };
 
+  const toggleEthnicity = (ethnicity: string) => {
+    setSelectedEthnicity(prev => 
+      prev.includes(ethnicity) 
+        ? prev.filter(e => e !== ethnicity)
+        : [...prev, ethnicity]
+    );
+  };
+
   const handleSave = () => {
     const updatedData = {
       ...formData,
       interests: JSON.stringify(selectedInterests),
       traits: JSON.stringify(selectedTraits),
+      ethnicity: JSON.stringify(selectedEthnicity),
+      waliDetails: JSON.stringify(formData.waliDetails),
     };
     onSave(updatedData);
   };
@@ -172,9 +212,10 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="widowed">Widowed</SelectItem>
-                    <SelectItem value="divorced">Divorced</SelectItem>
+                    <SelectItem value="Single">Single</SelectItem>
+                    <SelectItem value="Married">Married</SelectItem>
+                    <SelectItem value="Widowed">Widowed</SelectItem>
+                    <SelectItem value="Divorced">Divorced</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -221,13 +262,13 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                     <SelectValue placeholder="Select nationality" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Afghanistan">Afghanistan</SelectItem>
-                    <SelectItem value="Pakistan">Pakistan</SelectItem>
-                    <SelectItem value="India">India</SelectItem>
-                    <SelectItem value="Bangladesh">Bangladesh</SelectItem>
-                    <SelectItem value="Nigeria">Nigeria</SelectItem>
-                    <SelectItem value="UK">United Kingdom</SelectItem>
-                    <SelectItem value="USA">United States</SelectItem>
+                    <SelectItem value="Afghan">Afghan</SelectItem>
+                    <SelectItem value="Nigerian">Nigerian</SelectItem>
+                    <SelectItem value="Pakistani">Pakistani</SelectItem>
+                    <SelectItem value="Indian">Indian</SelectItem>
+                    <SelectItem value="Bangladeshi">Bangladeshi</SelectItem>
+                    <SelectItem value="British">British</SelectItem>
+                    <SelectItem value="American">American</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -238,10 +279,10 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                     <SelectValue placeholder="Select region" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Badakhshan">Badakhshan</SelectItem>
-                    <SelectItem value="Kabul">Kabul</SelectItem>
-                    <SelectItem value="Herat">Herat</SelectItem>
-                    <SelectItem value="Kandahar">Kandahar</SelectItem>
+                    <SelectItem value="Lagos">Lagos</SelectItem>
+                    <SelectItem value="Abuja">Abuja</SelectItem>
+                    <SelectItem value="Kano">Kano</SelectItem>
+                    <SelectItem value="Kaduna">Kaduna</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -255,30 +296,29 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Afghanistan">Afghanistan</SelectItem>
+                    <SelectItem value="Nigeria">Nigeria</SelectItem>
                     <SelectItem value="Pakistan">Pakistan</SelectItem>
                     <SelectItem value="India">India</SelectItem>
                     <SelectItem value="Bangladesh">Bangladesh</SelectItem>
-                    <SelectItem value="Nigeria">Nigeria</SelectItem>
                     <SelectItem value="UK">United Kingdom</SelectItem>
                     <SelectItem value="USA">United States</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Ethnicity</Label>
-                <Select value={formData.ethnicity} onValueChange={(value) => handleInputChange("ethnicity", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select ethnicity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Afghan">Afghan</SelectItem>
-                    <SelectItem value="Pakistani">Pakistani</SelectItem>
-                    <SelectItem value="Indian">Indian</SelectItem>
-                    <SelectItem value="Bengali">Bengali</SelectItem>
-                    <SelectItem value="Arab">Arab</SelectItem>
-                    <SelectItem value="Turkish">Turkish</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Ethnicity (Select all that apply)</Label>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  {["Afghan", "Nigerian", "Pakistani", "Indian", "Bengali", "Arab", "Turkish"].map((ethnicity) => (
+                    <Badge
+                      key={ethnicity}
+                      variant={selectedEthnicity.includes(ethnicity) ? "default" : "outline"}
+                      className="cursor-pointer justify-center text-xs py-1"
+                      onClick={() => toggleEthnicity(ethnicity)}
+                    >
+                      {ethnicity}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -360,30 +400,12 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                 </Select>
               </div>
             </div>
-            <div>
-              <Label htmlFor="appearance-details">Additional Details</Label>
-              <Textarea
-                id="appearance-details"
-                placeholder="Any additional appearance details..."
-                className="min-h-[80px]"
-              />
-            </div>
           </div>
         );
 
       case 3: // Lifestyle and Traits
         return (
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="lifestyle">Lifestyle</Label>
-              <Textarea
-                id="lifestyle"
-                value={formData.summary}
-                onChange={(e) => handleInputChange("summary", e.target.value)}
-                placeholder="Describe your lifestyle..."
-                className="min-h-[100px]"
-              />
-            </div>
             <div>
               <Label>Which of these Traits describe you (Select all that apply)</Label>
               <div className="grid grid-cols-4 gap-2 mt-2">
@@ -501,15 +523,14 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Are you practicing?</Label>
-                <Select value={formData.patternOfSalaah} onValueChange={(value) => handleInputChange("patternOfSalaah", value)}>
+                <Label>Are you a revert?</Label>
+                <Select value={formData.revert} onValueChange={(value) => handleInputChange("revert", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Yes">Yes</SelectItem>
-                    <SelectItem value="No">No</SelectItem>
-                    <SelectItem value="Learning">Learning</SelectItem>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -547,29 +568,12 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                   <SelectValue placeholder="Select frequency" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Never or One-offs">Never or One-offs</SelectItem>
-                  <SelectItem value="Sometimes">Sometimes</SelectItem>
-                  <SelectItem value="Usually">Usually</SelectItem>
-                  <SelectItem value="Always">Always</SelectItem>
+                  <SelectItem value="never">Never or One-offs</SelectItem>
+                  <SelectItem value="sometimes">Sometimes</SelectItem>
+                  <SelectItem value="usually">Usually</SelectItem>
+                  <SelectItem value="always">Always</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>Which of these describe you (Select all that apply)</Label>
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                <Badge variant="outline" className="cursor-pointer justify-center py-2">
-                  🕌 Masjid Goer
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer justify-center py-2">
-                  👤 Tasbih User
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer justify-center py-2">
-                  📚 Quran Reader
-                </Badge>
-                <Badge variant="outline" className="cursor-pointer justify-center py-2">
-                  🙏 Prayer Devotee
-                </Badge>
-              </div>
             </div>
             <div>
               <Label htmlFor="practice-details">Details about how you practice deen, where you learn (scholars/speakers)?</Label>
@@ -590,104 +594,83 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div className="w-80 bg-white shadow-sm">
-        <div className="p-6 border-b">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <span className="text-orange-600 font-semibold text-lg">
-                {user.fname?.charAt(0)}{user.lname?.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <h2 className="font-medium">{user.fname} {user.lname}</h2>
-              <p className="text-sm text-gray-500">Manage your profile here</p>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-80 bg-white shadow-sm min-h-screen">
+          <div className="p-6 border-b">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-orange-600 font-semibold text-lg">
+                  {user.fname?.charAt(0)}{user.lname?.charAt(0)}
+                </span>
+              </div>
+              <div>
+                <h2 className="font-medium">{user.fname} {user.lname}</h2>
+                <p className="text-sm text-gray-500">Manage your profile here</p>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <nav className="p-4">
-          {sidebarItems.map((item, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSection(index)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                currentSection === index 
-                  ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' 
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-        </nav>
+          
+          <nav className="p-4">
+            {sidebarItems.map((item, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSection(index)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  currentSection === index 
+                    ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600' 
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="font-medium">{item.label}</span>
+              </button>
+            ))}
+          </nav>
 
-        <div className="p-4 border-t">
-          <Button onClick={handleSave} className="w-full mb-2">
-            Update my profile
-          </Button>
+          <div className="p-4 border-t">
+            <Button onClick={handleSave} className="w-full mb-2">
+              Update my profile
+            </Button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-xl">{sections[currentSection]}</CardTitle>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
+                  disabled={currentSection === 0}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentSection(Math.min(sections.length - 1, currentSection + 1))}
+                  disabled={currentSection === sections.length - 1}
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="min-h-[500px]">
+              {renderSection()}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-xl">{sections[currentSection]}</CardTitle>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
-                disabled={currentSection === 0}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentSection(Math.min(sections.length - 1, currentSection + 1))}
-                disabled={currentSection === sections.length - 1}
-              >
-                Next
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="min-h-[500px]">
-            {renderSection()}
-          </CardContent>
-        </Card>
-
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-          <div className="flex justify-center space-x-8">
-            <button className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-blue-600 rounded"></div>
-              <span className="text-xs text-blue-600">Dashboard</span>
-            </button>
-            <button className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-gray-300 rounded"></div>
-              <span className="text-xs text-gray-500">Search</span>
-            </button>
-            <button className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-gray-300 rounded"></div>
-              <span className="text-xs text-gray-500">Profile</span>
-            </button>
-            <button className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-gray-300 rounded"></div>
-              <span className="text-xs text-gray-500">Alerts</span>
-            </button>
-            <button className="flex flex-col items-center space-y-1">
-              <div className="w-6 h-6 bg-gray-300 rounded"></div>
-              <span className="text-xs text-gray-500">Settings</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Use consistent Navbar */}
+      <Navbar />
     </div>
   );
 };
