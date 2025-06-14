@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
@@ -207,7 +208,7 @@ const Messages = () => {
                       contact={{
                         id: selectedConversation._id,
                         name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
-                        photoUrl: selectedConversation.userDetails.profile_pic || "",
+                        photoUrl: "",
                         online: false
                       }}
                       messages={formattedMessages}
