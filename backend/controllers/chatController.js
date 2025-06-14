@@ -1,4 +1,3 @@
-
 const Chat = require('../models/Chat');
 const User = require('../models/User');
 const Relationship = require('../models/Relationship');
