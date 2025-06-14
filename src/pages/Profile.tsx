@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
 import { Badge } from "@/components/ui/badge";
 import ProfileImage from "@/components/ProfileImage";
+import { parseJsonField } from "@/utils/dataUtils";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
