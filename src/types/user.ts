@@ -46,6 +46,14 @@ export interface User {
   weight?: string;
   emailVerified?: boolean;
   profile_pic?: string;
+  sect?: string;
+  dressingCovering?: string;
+  islamicPractice?: string;
+  otherDetails?: string;
+  openToMatches?: string;
+  dealbreakers?: string;
+  icebreakers?: string;
+  interests?: string;
 }
 
 export interface LoginCredentials {

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import ProfileEditSections from "@/components/ProfileEditSections";
 import ProfileHeader from "@/components/ProfileHeader";
 import ProfileInfo from "@/components/ProfileInfo";
-import ProfileEditForm from "@/components/ProfileEditForm";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ const Profile = () => {
   const { userId } = useParams<{ userId: string }>();
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(true); // Always start in edit mode as requested
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const { toast } = useToast();
@@ -110,81 +110,30 @@ const Profile = () => {
       });
     }
   };
-  
-  // Calculate age from DOB
-  const calculateAge = (dob: Date | string | undefined) => {
-    if (!dob) return null;
-    
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    return age;
-  };
-  
-  // Helper function to parse JSON strings
-  const parseJsonField = (jsonString: string | null | undefined) => {
-    if (!jsonString) return [];
-    try {
-      return JSON.parse(jsonString);
-    } catch (e) {
-      return [jsonString];
-    }
-  };
-  
-  // Extract user interests from various fields
-  const extractInterests = (user: User | null) => {
-    if (!user) return [];
-    
-    const interests: string[] = [];
-    
-    if (user.nationality) interests.push(user.nationality);
-    if (user.patternOfSalaah) interests.push(user.patternOfSalaah);
-    if (user.maritalStatus) interests.push(user.maritalStatus);
-    
-    // Try to parse ethnicity as JSON
-    if (user.ethnicity) {
-      const ethnicities = parseJsonField(user.ethnicity);
-      if (Array.isArray(ethnicities)) {
-        interests.push(...ethnicities);
-      } else {
-        interests.push(user.ethnicity);
-      }
-    }
-    
-    // Try to parse traits as JSON
-    if (user.traits) {
-      const traits = parseJsonField(user.traits);
-      if (Array.isArray(traits)) {
-        interests.push(...traits);
-      } else {
-        interests.push(user.traits);
-      }
-    }
-    
-    return interests.filter(Boolean);
-  };
 
-  const handleProfileUpdated = () => {
-    setIsEditMode(false);
-    // Refresh the current user data through the auth context
-    // This would typically be a function exposed by your auth context to refresh the current user
-    // If not available, you might need to fetch the profile again manually
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been updated successfully",
-    });
+  const handleProfileSave = async (updatedData: Partial<User>) => {
+    if (!profileUser?._id) return;
+    
+    try {
+      await userService.updateProfile(profileUser._id, updatedData);
+      setProfileUser(prev => prev ? { ...prev, ...updatedData } : null);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="container py-6 flex justify-center items-center h-[calc(100vh-100px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -195,7 +144,6 @@ const Profile = () => {
   if (!profileUser) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
         <div className="container py-6">
           <Card>
             <CardContent className="p-8 text-center">
@@ -207,6 +155,18 @@ const Profile = () => {
     );
   }
 
+  // If it's own profile and in edit mode, show the new profile edit sections
+  if (isOwnProfile && isEditMode) {
+    return (
+      <ProfileEditSections
+        user={profileUser}
+        onSave={handleProfileSave}
+        onCancel={() => setIsEditMode(false)}
+      />
+    );
+  }
+
+  // Otherwise show the regular profile view (for viewing other profiles or when not in edit mode)
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -262,13 +222,13 @@ const Profile = () => {
         <div className="flex justify-between items-start mb-4">
           <ProfileHeader
             name={`${profileUser.fname} ${profileUser.lname}`}
-            age={calculateAge(profileUser.dob) || 0}
+            age={profileUser.dob ? new Date().getFullYear() - new Date(profileUser.dob).getFullYear() : 0}
             location={profileUser.country || "Location not specified"}
             photoUrl={profileUser.profile_pic || ""}
             isOwnProfile={isOwnProfile}
           />
           
-          {isOwnProfile && !isEditMode && (
+          {isOwnProfile && (
             <Button 
               variant="outline" 
               className="flex items-center gap-2"
@@ -278,138 +238,121 @@ const Profile = () => {
               Edit Profile
             </Button>
           )}
-          
-          {isOwnProfile && isEditMode && (
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditMode(false)}
-            >
-              Cancel Editing
-            </Button>
-          )}
         </div>
         
-        {/* If in edit mode, show edit form */}
-        {isOwnProfile && isEditMode ? (
-          <ProfileEditForm 
-            user={profileUser} 
-            onSaved={handleProfileUpdated} 
-          />
-        ) : (
-          <div className="mt-6">
-            <Tabs defaultValue="about">
-              <TabsList className="mb-4">
-                <TabsTrigger value="about">About</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-                <TabsTrigger value="photos">Photos</TabsTrigger>
-              </TabsList>
-              <TabsContent value="about">
-                <ProfileInfo
-                  user={profileUser}
-                  isCurrentUser={isOwnProfile}
-                  onEditClick={() => setIsEditMode(true)}
-                  bio={profileUser.summary || "No summary provided"}
-                  interests={extractInterests(profileUser)}
-                  lookingFor={profileUser.maritalStatus || "Not specified"}
-                  occupation={profileUser.workEducation?.split(',')[0] || undefined}
-                  education={profileUser.workEducation?.includes('degree') ? profileUser.workEducation : undefined}
-                />
-              </TabsContent>
-              <TabsContent value="details">
-                <Card>
-                  <CardContent className="p-6 space-y-4">
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Personal Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {profileUser.kunya && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Nickname/Kunya:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.kunya}</span>
-                          </div>
-                        )}
-                        {profileUser.maritalStatus && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Marital Status:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.maritalStatus}</span>
-                          </div>
-                        )}
-                        {profileUser.noOfChildren && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Children:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.noOfChildren}</span>
-                          </div>
-                        )}
-                        {profileUser.nationality && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Nationality:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.nationality}</span>
-                          </div>
-                        )}
-                        {profileUser.region && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Region:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.region}</span>
-                          </div>
-                        )}
-                        {profileUser.ethnicity && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Ethnicity:</span>
-                            <span className="text-sm text-muted-foreground">
-                              {Array.isArray(parseJsonField(profileUser.ethnicity)) 
-                                ? parseJsonField(profileUser.ethnicity).join(", ") 
-                                : profileUser.ethnicity}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+        <div className="mt-6">
+          <Tabs defaultValue="about">
+            <TabsList className="mb-4">
+              <TabsTrigger value="about">About</TabsTrigger>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
+            </TabsList>
+            <TabsContent value="about">
+              <ProfileInfo
+                user={profileUser}
+                isCurrentUser={isOwnProfile}
+                onEditClick={() => setIsEditMode(true)}
+                bio={profileUser.summary || "No summary provided"}
+                interests={[]}
+                lookingFor={profileUser.maritalStatus || "Not specified"}
+                occupation={profileUser.workEducation?.split(',')[0] || undefined}
+                education={profileUser.workEducation?.includes('degree') ? profileUser.workEducation : undefined}
+              />
+            </TabsContent>
+            <TabsContent value="details">
+              <Card>
+                <CardContent className="p-6 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Personal Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {profileUser.kunya && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Nickname/Kunya:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.kunya}</span>
+                        </div>
+                      )}
+                      {profileUser.maritalStatus && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Marital Status:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.maritalStatus}</span>
+                        </div>
+                      )}
+                      {profileUser.noOfChildren && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Children:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.noOfChildren}</span>
+                        </div>
+                      )}
+                      {profileUser.nationality && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Nationality:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.nationality}</span>
+                        </div>
+                      )}
+                      {profileUser.region && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Region:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.region}</span>
+                        </div>
+                      )}
+                      {profileUser.ethnicity && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Ethnicity:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {Array.isArray(parseJsonField(profileUser.ethnicity)) 
+                              ? parseJsonField(profileUser.ethnicity).join(", ") 
+                              : profileUser.ethnicity}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">Religious Practice</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {profileUser.patternOfSalaah && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Pattern of Salaah:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.patternOfSalaah}</span>
-                          </div>
-                        )}
-                        {profileUser.revert && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Revert:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.revert}</span>
-                          </div>
-                        )}
-                        {profileUser.scholarsSpeakers && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Scholars & Speakers:</span>
-                            <span className="text-sm text-muted-foreground">{profileUser.scholarsSpeakers}</span>
-                          </div>
-                        )}
-                        {profileUser.traits && (
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Traits:</span>
-                            <span className="text-sm text-muted-foreground">
-                              {Array.isArray(parseJsonField(profileUser.traits)) 
-                                ? parseJsonField(profileUser.traits).join(", ") 
-                                : profileUser.traits}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Religious Practice</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {profileUser.patternOfSalaah && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Pattern of Salaah:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.patternOfSalaah}</span>
+                        </div>
+                      )}
+                      {profileUser.revert && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Revert:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.revert}</span>
+                        </div>
+                      )}
+                      {profileUser.scholarsSpeakers && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Scholars & Speakers:</span>
+                          <span className="text-sm text-muted-foreground">{profileUser.scholarsSpeakers}</span>
+                        </div>
+                      )}
+                      {profileUser.traits && (
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Traits:</span>
+                          <span className="text-sm text-muted-foreground">
+                            {Array.isArray(parseJsonField(profileUser.traits)) 
+                              ? parseJsonField(profileUser.traits).join(", ") 
+                              : profileUser.traits}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="photos">
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No photos available</p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="photos">
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">No photos available</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

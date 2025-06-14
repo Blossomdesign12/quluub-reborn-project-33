@@ -32,6 +32,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
+            <Route path="/profile/:userId" element={<PrivateRoute element={<Profile />} />} />
             <Route path="/browse" element={<PrivateRoute element={<Browse />} />} />
             <Route path="/messages" element={<PrivateRoute element={<Messages />} />} />
             <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
