@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
@@ -7,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User } from "@/types/user";
 import { DatabaseStats } from "@/components/DatabaseStats";
-import { Heart, User as UserIcon, ArrowRight } from "lucide-react";
+import { Heart, User as UserIcon, ArrowRight, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { relationshipService, chatService } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
+import { calculateAge } from "@/utils/dataUtils";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -22,6 +24,7 @@ const Dashboard = () => {
     sentRequests: 0,
     profileViews: 0
   });
+  const [matchesList, setMatchesList] = useState<any[]>([]);
   
   // Fetch relationship stats from the backend
   const { data: relationshipData, isLoading, error } = useQuery({
@@ -42,7 +45,8 @@ const Dashboard = () => {
           receivedRequests: pendingData?.requests?.length || 0,
           sentRequests: 0, // This would need a separate endpoint if available
           profileViews: 0, // This would need a separate endpoint if available
-          unreadMessages: unreadCount || 0
+          unreadMessages: unreadCount || 0,
+          matchesList: matchesData?.matches || []
         };
       } catch (err) {
         console.error("Failed to fetch relationship data:", err);
@@ -56,7 +60,8 @@ const Dashboard = () => {
           receivedRequests: 0,
           sentRequests: 0,
           profileViews: 0,
-          unreadMessages: 0
+          unreadMessages: 0,
+          matchesList: []
         };
       }
     },
@@ -72,6 +77,7 @@ const Dashboard = () => {
         sentRequests: relationshipData.sentRequests,
         profileViews: relationshipData.profileViews
       });
+      setMatchesList(relationshipData.matchesList);
     }
   }, [relationshipData]);
 
@@ -216,23 +222,73 @@ const Dashboard = () => {
           </div>
           
           {/* Matches Tab Content */}
-          <div className="py-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 16V12" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 8H12.01" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+          {matchesList.length > 0 ? (
+            <div className="py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {matchesList.slice(0, 6).map((match) => (
+                  <Card key={match._id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                          <span className="text-lg font-semibold text-primary">
+                            {match.fname?.charAt(0)}{match.lname?.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">
+                            {match.fname} {match.lname}
+                            {match.dob && `, ${calculateAge(match.dob)}`}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {match.country || "Location not specified"}
+                          </p>
+                        </div>
+                      </div>
+                      {match.summary && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          {match.summary}
+                        </p>
+                      )}
+                      <Link to="/messages">
+                        <Button size="sm" className="w-full">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Message
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {/* View All Matches Button */}
+              <div className="text-center">
+                <Link to="/matches">
+                  <Button variant="outline">
+                    View All Matches
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <p className="text-lg text-muted-foreground">No matches yet</p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => window.location.href = '/browse'}
-            >
-              Browse potential matches
-            </Button>
-          </div>
+          ) : (
+            <div className="py-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 16V12" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 8H12.01" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <p className="text-lg text-muted-foreground">No matches yet</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => window.location.href = '/browse'}
+              >
+                Browse potential matches
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* Feed Section */}
@@ -265,3 +321,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
