@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
 import VideoCallRestriction from "@/components/VideoCallRestriction";
-import { chatService } from "@/lib/api-client";
+import { chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -47,6 +47,7 @@ const Messages = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [newConversationUser, setNewConversationUser] = useState<any>(null);
   
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   
@@ -56,8 +57,29 @@ const Messages = () => {
     const conversationId = urlParams.get('conversation');
     if (conversationId) {
       setSelectedConversationId(conversationId);
+      
+      // Check if this conversation exists, if not, fetch user details for new conversation
+      const existingConversation = conversations.find(c => c._id === conversationId);
+      if (!existingConversation && conversations.length > 0) {
+        // This is a new conversation, fetch user details
+        fetchUserForNewConversation(conversationId);
+      }
     }
-  }, [location.search]);
+  }, [location.search, conversations]);
+  
+  const fetchUserForNewConversation = async (userId: string) => {
+    try {
+      const userData = await userService.getProfile(userId);
+      setNewConversationUser(userData);
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user details",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Fetch conversations
   useEffect(() => {
@@ -90,24 +112,35 @@ const Messages = () => {
   // Fetch messages when conversation selected
   useEffect(() => {
     if (selectedConversationId) {
-      const fetchMessages = async () => {
-        try {
-          const data = await chatService.getMessages(selectedConversationId);
-          console.log("Messages:", data);
-          setMessages(data);
-        } catch (error) {
-          console.error("Failed to fetch messages:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load messages",
-            variant: "destructive",
-          });
-        }
-      };
-      
-      fetchMessages();
+      const existingConversation = conversations.find(c => c._id === selectedConversationId);
+      if (existingConversation) {
+        const fetchMessages = async () => {
+          try {
+            const data = await chatService.getMessages(selectedConversationId);
+            console.log("Messages:", data);
+            setMessages(data);
+          } catch (error) {
+            console.error("Failed to fetch messages:", error);
+            // For new conversations, this is expected, so we'll start with empty messages
+            if (error.response?.status === 404 || error.response?.status === 403) {
+              setMessages([]);
+            } else {
+              toast({
+                title: "Error",
+                description: "Failed to load messages",
+                variant: "destructive",
+              });
+            }
+          }
+        };
+        
+        fetchMessages();
+      } else {
+        // New conversation, start with empty messages
+        setMessages([]);
+      }
     }
-  }, [selectedConversationId, toast]);
+  }, [selectedConversationId, conversations, toast]);
   
   const handleSendMessage = async (content: string) => {
     if (!selectedConversationId || !content.trim()) return;
@@ -129,21 +162,43 @@ const Messages = () => {
         status: response.status
       }]);
       
-      // Update conversation list with new last message
-      setConversations(prevConversations => 
-        prevConversations.map(conv => 
-          conv._id === selectedConversationId
-            ? {
-                ...conv,
-                lastMessage: {
-                  ...conv.lastMessage,
-                  message: content,
-                  created: new Date().toISOString()
+      // If this was a new conversation, add it to conversations list
+      if (newConversationUser && !selectedConversation) {
+        const newConversation = {
+          _id: selectedConversationId,
+          lastMessage: {
+            message: content,
+            created: new Date().toISOString(),
+            status: 'SENT'
+          },
+          userDetails: {
+            username: newConversationUser.username,
+            fname: newConversationUser.fname,
+            lname: newConversationUser.lname,
+            gender: newConversationUser.gender,
+            country: newConversationUser.country
+          },
+          unreadCount: 0
+        };
+        setConversations(prev => [newConversation, ...prev]);
+        setNewConversationUser(null);
+      } else {
+        // Update existing conversation with new last message
+        setConversations(prevConversations => 
+          prevConversations.map(conv => 
+            conv._id === selectedConversationId
+              ? {
+                  ...conv,
+                  lastMessage: {
+                    ...conv.lastMessage,
+                    message: content,
+                    created: new Date().toISOString()
+                  }
                 }
-              }
-            : conv
-        )
-      );
+              : conv
+          )
+        );
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -159,6 +214,28 @@ const Messages = () => {
   const handleSelectConversation = (id: string) => {
     setSelectedConversationId(id);
   };
+  
+  // Determine the contact for conversation view
+  const getConversationContact = () => {
+    if (selectedConversation) {
+      return {
+        id: selectedConversation._id,
+        name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
+        photoUrl: "",
+        online: false
+      };
+    } else if (newConversationUser) {
+      return {
+        id: selectedConversationId!,
+        name: `${newConversationUser.fname} ${newConversationUser.lname}`,
+        photoUrl: "",
+        online: false
+      };
+    }
+    return null;
+  };
+  
+  const conversationContact = getConversationContact();
   
   // Format conversation data for MessageList component
   const formattedConversations = conversations.map(conv => ({
@@ -188,7 +265,7 @@ const Messages = () => {
           <div className="flex items-center justify-center h-[calc(100vh-200px)]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-        ) : conversations.length === 0 ? (
+        ) : conversations.length === 0 && !selectedConversationId ? (
           <Card className="p-8 text-center">
             <p className="text-muted-foreground">You don't have any conversations yet.</p>
             <p className="text-muted-foreground mt-2">Accept connection requests to start chatting!</p>
@@ -211,16 +288,11 @@ const Messages = () => {
             
             {/* Conversation view */}
             <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
-              {selectedConversation ? (
+              {conversationContact ? (
                 <>
                   <div className="flex-1">
                     <ConversationView
-                      contact={{
-                        id: selectedConversation._id,
-                        name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
-                        photoUrl: "",
-                        online: false
-                      }}
+                      contact={conversationContact}
                       messages={formattedMessages}
                       currentUserId={user?._id || ""}
                       onSendMessage={handleSendMessage}
