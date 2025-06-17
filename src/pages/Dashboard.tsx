@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
@@ -98,6 +96,11 @@ const Dashboard = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleMessageMatch = (matchId: string) => {
+    // Navigate to messages with the specific conversation ID
+    window.location.href = `/messages?conversation=${matchId}`;
   };
 
   return (
@@ -249,12 +252,14 @@ const Dashboard = () => {
                           {match.summary}
                         </p>
                       )}
-                      <Link to="/messages">
-                        <Button size="sm" className="w-full">
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Message
-                        </Button>
-                      </Link>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleMessageMatch(match._id)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Message
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -321,4 +326,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

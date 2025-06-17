@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
@@ -41,6 +41,7 @@ interface Message {
 const Messages = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -48,6 +49,15 @@ const Messages = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
+  
+  // Check URL for conversation parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const conversationId = urlParams.get('conversation');
+    if (conversationId) {
+      setSelectedConversationId(conversationId);
+    }
+  }, [location.search]);
   
   // Fetch conversations
   useEffect(() => {
@@ -58,7 +68,7 @@ const Messages = () => {
         console.log("Conversations:", data);
         setConversations(data);
         
-        // Select first conversation if available
+        // Select first conversation if available and no conversation selected from URL
         if (data.length > 0 && !selectedConversationId) {
           setSelectedConversationId(data[0]._id);
         }
