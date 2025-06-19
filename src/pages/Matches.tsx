@@ -87,6 +87,7 @@ const Matches = () => {
   
   // Handle clicking on a match to start messaging
   const handleStartChat = (userId: string) => {
+    console.log('Starting chat with user:', userId);
     navigate(`/messages?matchId=${userId}`);
   };
 
@@ -108,7 +109,7 @@ const Matches = () => {
                   name={`${match.fname} ${match.lname}`}
                   age={calculateAge(match.dob as string) || 0}
                   location={match.country || "Location not specified"}
-                  photoUrl="" // Always use icon
+                  photoUrl=""
                   matchDate={match.relationship?.createdAt ? formatMatchDate(match.relationship.createdAt) : "Recently"}
                   tags={extractInterests(match)}
                   bio={match.summary || "No summary provided"}

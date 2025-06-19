@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
@@ -8,7 +8,6 @@ import VideoCallRestriction from "@/components/VideoCallRestriction";
 import { chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card } from "@/components/ui/card";
 
 interface Conversation {
   _id: string;
@@ -43,6 +42,7 @@ const Messages = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -78,6 +78,7 @@ const Messages = () => {
       const userData = await userService.getProfile(userId);
       console.log('User data for new conversation:', userData);
       setNewConversationUser(userData);
+      setMessages([]); // Start with empty messages for new conversation
     } catch (error) {
       console.error("Failed to fetch user details:", error);
       toast({
@@ -146,9 +147,6 @@ const Messages = () => {
       };
       
       fetchMessages();
-    } else if (newConversationUser) {
-      // New conversation, start with empty messages
-      setMessages([]);
     }
   }, [selectedConversationId, newConversationUser, toast]);
   
@@ -201,6 +199,9 @@ const Messages = () => {
         };
         setConversations(prev => [newConversation, ...prev]);
         setNewConversationUser(null);
+        
+        // Update URL to reflect the new conversation
+        navigate(`/messages?conversation=${selectedConversationId}`, { replace: true });
       } else {
         // Update existing conversation with new last message
         setConversations(prevConversations => 
@@ -239,11 +240,10 @@ const Messages = () => {
   const handleSelectConversation = (id: string) => {
     console.log('Selecting conversation:', id);
     setSelectedConversationId(id);
-    setNewConversationUser(null); // Clear new conversation user when selecting existing conversation
+    setNewConversationUser(null);
     
     // Update URL to reflect selected conversation
-    const newUrl = `/messages?conversation=${id}`;
-    window.history.replaceState({}, '', newUrl);
+    navigate(`/messages?conversation=${id}`, { replace: true });
   };
   
   // Determine the contact for conversation view
@@ -272,7 +272,7 @@ const Messages = () => {
   const formattedConversations = conversations.map(conv => ({
     id: conv._id,
     name: `${conv.userDetails.fname} ${conv.userDetails.lname}`,
-    photoUrl: "", // We need to add profile photo support
+    photoUrl: "",
     lastMessage: conv.lastMessage.message,
     timestamp: formatTimestamp(conv.lastMessage.created),
     unread: conv.lastMessage.status === "UNREAD" && conv.unreadCount > 0
@@ -312,13 +312,13 @@ const Messages = () => {
                   />
                 ) : (
                   <div className="p-4 text-center text-muted-foreground">
-                    {selectedConversationId ? "Start your first conversation!" : "No conversations yet"}
+                    {newConversationUser ? "Start your first conversation!" : "No conversations yet"}
                   </div>
                 )}
               </div>
             </div>
             
-            {/* Conversation view - Show when we have a selected conversation OR when loading conversation details */}
+            {/* Conversation view */}
             <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
               {conversationLoading ? (
                 <div className="flex items-center justify-center h-full">
@@ -375,6 +375,19 @@ const Messages = () => {
                     messages={formattedMessages}
                     currentUserId={user?._id || ""}
                     onSendMessage={handleSendMessage}
+                  />
+                </div>
+                
+                {/* Mobile Video Call Section */}
+                <div className="border-t p-4">
+                  <VideoCallRestriction 
+                    user={user!}
+                    onStartCall={() => {
+                      toast({
+                        title: "Video Call Started",
+                        description: "You have 5 minutes for this call",
+                      });
+                    }}
                   />
                 </div>
               </div>
