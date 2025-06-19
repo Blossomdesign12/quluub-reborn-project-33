@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -51,25 +52,28 @@ const Messages = () => {
   
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   
-  // Check URL for conversation parameter
+  // Check URL for conversation or match parameter
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const conversationId = urlParams.get('conversation');
+    const matchId = urlParams.get('matchId');
+    
+    console.log('URL params - conversation:', conversationId, 'matchId:', matchId);
+    
     if (conversationId) {
       setSelectedConversationId(conversationId);
-      
-      // Check if this conversation exists, if not, fetch user details for new conversation
-      const existingConversation = conversations.find(c => c._id === conversationId);
-      if (!existingConversation && conversations.length > 0) {
-        // This is a new conversation, fetch user details
-        fetchUserForNewConversation(conversationId);
-      }
+    } else if (matchId) {
+      // This is a new conversation with a match
+      setSelectedConversationId(matchId);
+      fetchUserForNewConversation(matchId);
     }
-  }, [location.search, conversations]);
+  }, [location.search]);
   
   const fetchUserForNewConversation = async (userId: string) => {
     try {
+      console.log('Fetching user details for new conversation:', userId);
       const userData = await userService.getProfile(userId);
+      console.log('User data for new conversation:', userData);
       setNewConversationUser(userData);
     } catch (error) {
       console.error("Failed to fetch user details:", error);
@@ -107,50 +111,54 @@ const Messages = () => {
     };
     
     fetchConversations();
-  }, [toast]);
+  }, []);
   
   // Fetch messages when conversation selected
   useEffect(() => {
-    if (selectedConversationId) {
-      const existingConversation = conversations.find(c => c._id === selectedConversationId);
-      if (existingConversation) {
-        const fetchMessages = async () => {
-          try {
-            const data = await chatService.getMessages(selectedConversationId);
-            console.log("Messages:", data);
-            setMessages(data);
-          } catch (error) {
-            console.error("Failed to fetch messages:", error);
-            // For new conversations, this is expected, so we'll start with empty messages
-            if (error.response?.status === 404 || error.response?.status === 403) {
-              setMessages([]);
-            } else {
-              toast({
-                title: "Error",
-                description: "Failed to load messages",
-                variant: "destructive",
-              });
-            }
+    if (selectedConversationId && !newConversationUser) {
+      const fetchMessages = async () => {
+        try {
+          console.log('Fetching messages for conversation:', selectedConversationId);
+          const data = await chatService.getMessages(selectedConversationId);
+          console.log("Messages:", data);
+          setMessages(data);
+        } catch (error) {
+          console.error("Failed to fetch messages:", error);
+          // For new conversations, this is expected, so we'll start with empty messages
+          if (error.response?.status === 404 || error.response?.status === 403) {
+            setMessages([]);
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to load messages",
+              variant: "destructive",
+            });
           }
-        };
-        
-        fetchMessages();
-      } else {
-        // New conversation, start with empty messages
-        setMessages([]);
-      }
+        }
+      };
+      
+      fetchMessages();
+    } else if (newConversationUser) {
+      // New conversation, start with empty messages
+      setMessages([]);
     }
-  }, [selectedConversationId, conversations, toast]);
+  }, [selectedConversationId, newConversationUser, toast]);
   
   const handleSendMessage = async (content: string) => {
-    if (!selectedConversationId || !content.trim()) return;
+    if (!selectedConversationId || !content.trim()) {
+      console.error('Cannot send message: missing conversation ID or content');
+      return;
+    }
     
     try {
       setSendingMessage(true);
-      const response = await chatService.sendMessage(selectedConversationId, content);
+      console.log('Sending message to:', selectedConversationId, 'Content:', content);
       
-      // Update messages list with new message
-      setMessages(prevMessages => [...prevMessages, {
+      const response = await chatService.sendMessage(selectedConversationId, content);
+      console.log('Message sent successfully:', response);
+      
+      // Create message object for UI
+      const newMessage = {
         id: response._id,
         _id: response._id,
         content: response.message,
@@ -160,10 +168,13 @@ const Messages = () => {
         timestamp: 'Just now',
         created: response.created,
         status: response.status
-      }]);
+      };
+      
+      // Update messages list with new message
+      setMessages(prevMessages => [...prevMessages, newMessage]);
       
       // If this was a new conversation, add it to conversations list
-      if (newConversationUser && !selectedConversation) {
+      if (newConversationUser) {
         const newConversation = {
           _id: selectedConversationId,
           lastMessage: {
@@ -199,11 +210,17 @@ const Messages = () => {
           )
         );
       }
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been sent successfully",
+      });
+      
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -212,7 +229,9 @@ const Messages = () => {
   };
   
   const handleSelectConversation = (id: string) => {
+    console.log('Selecting conversation:', id);
     setSelectedConversationId(id);
+    setNewConversationUser(null); // Clear new conversation user when selecting existing conversation
   };
   
   // Determine the contact for conversation view

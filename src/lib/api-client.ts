@@ -154,17 +154,23 @@ export const relationshipService = {
 // Chat services
 export const chatService = {
   getConversations: async (): Promise<any[]> => {
+    console.log('Fetching conversations...');
     const response = await apiClient.get('/chats/conversations');
+    console.log('Conversations response:', response.data);
     return response.data;
   },
   
   getMessages: async (userId: string): Promise<any[]> => {
+    console.log('Fetching messages for user:', userId);
     const response = await apiClient.get(`/chats/messages/${userId}`);
+    console.log('Messages response:', response.data);
     return response.data;
   },
   
   sendMessage: async (receiverId: string, message: string): Promise<any> => {
+    console.log('Sending message to:', receiverId, 'Message:', message);
     const response = await apiClient.post('/chats/send', { receiverId, message });
+    console.log('Send message response:', response.data);
     return response.data;
   },
   
