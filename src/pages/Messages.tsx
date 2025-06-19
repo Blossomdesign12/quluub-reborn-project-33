@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -48,6 +49,7 @@ const Messages = () => {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [newConversationUser, setNewConversationUser] = useState<any>(null);
+  const [conversationLoading, setConversationLoading] = useState(false);
   
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   
@@ -61,6 +63,7 @@ const Messages = () => {
     
     if (conversationId) {
       setSelectedConversationId(conversationId);
+      setNewConversationUser(null);
     } else if (matchId) {
       // This is a new conversation with a match
       setSelectedConversationId(matchId);
@@ -70,6 +73,7 @@ const Messages = () => {
   
   const fetchUserForNewConversation = async (userId: string) => {
     try {
+      setConversationLoading(true);
       console.log('Fetching user details for new conversation:', userId);
       const userData = await userService.getProfile(userId);
       console.log('User data for new conversation:', userData);
@@ -81,6 +85,8 @@ const Messages = () => {
         description: "Failed to load user details",
         variant: "destructive",
       });
+    } finally {
+      setConversationLoading(false);
     }
   };
   
@@ -312,9 +318,13 @@ const Messages = () => {
               </div>
             </div>
             
-            {/* Conversation view - Always show if we have a selected conversation */}
+            {/* Conversation view - Show when we have a selected conversation OR when loading conversation details */}
             <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
-              {conversationContact ? (
+              {conversationLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : conversationContact ? (
                 <>
                   <div className="flex-1">
                     <ConversationView
