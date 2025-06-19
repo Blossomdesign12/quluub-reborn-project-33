@@ -59,6 +59,12 @@ const ConversationView = ({
     setIsInVideoCall(false);
   };
 
+  // Check if this is a two-person conversation (current user + contact)
+  const uniqueSenders = new Set([currentUserId, contact.id]);
+  const messageSenders = new Set(messages.map(msg => msg.senderId));
+  const isTwoPersonChat = messageSenders.size <= 2 && 
+    Array.from(messageSenders).every(senderId => uniqueSenders.has(senderId));
+
   return (
     <div className="flex flex-col h-full w-full">
       {/* Header */}
@@ -128,24 +134,33 @@ const ConversationView = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
-      <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
-        <Textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="min-h-[45px] resize-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
-        />
-        <Button type="submit" size="icon">
-          <Send className="h-5 w-5" />
-        </Button>
-      </form>
+      {/* Message Input - Only show for two-person conversations */}
+      {isTwoPersonChat && (
+        <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="min-h-[45px] resize-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+          />
+          <Button type="submit" size="icon">
+            <Send className="h-5 w-5" />
+          </Button>
+        </form>
+      )}
+      
+      {/* Show message when input is disabled */}
+      {!isTwoPersonChat && messages.length > 0 && (
+        <div className="border-t p-4 text-center text-muted-foreground text-sm">
+          Message input is only available for private conversations between two users
+        </div>
+      )}
     </div>
   );
 };
