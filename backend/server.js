@@ -24,8 +24,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // CORS configuration with more detailed options
+const allowedOrigins = process.env.CLIENT_URL.split(',');
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:8080',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
