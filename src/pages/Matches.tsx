@@ -87,7 +87,7 @@ const Matches = () => {
   
   // Handle clicking on a match to start messaging
   const handleStartChat = (userId: string) => {
-    navigate(`/messages?userId=${userId}`);
+    navigate(`/messages?matchId=${userId}`);
   };
 
   return (

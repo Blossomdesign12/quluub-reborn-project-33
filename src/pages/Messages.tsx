@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -94,8 +93,11 @@ const Messages = () => {
         console.log("Conversations:", data);
         setConversations(data);
         
-        // Select first conversation if available and no conversation selected from URL
-        if (data.length > 0 && !selectedConversationId) {
+        // Don't auto-select first conversation if we have a URL parameter
+        const urlParams = new URLSearchParams(location.search);
+        const hasUrlConversation = urlParams.get('conversation') || urlParams.get('matchId');
+        
+        if (data.length > 0 && !selectedConversationId && !hasUrlConversation) {
           setSelectedConversationId(data[0]._id);
         }
       } catch (error) {
@@ -232,6 +234,10 @@ const Messages = () => {
     console.log('Selecting conversation:', id);
     setSelectedConversationId(id);
     setNewConversationUser(null); // Clear new conversation user when selecting existing conversation
+    
+    // Update URL to reflect selected conversation
+    const newUrl = `/messages?conversation=${id}`;
+    window.history.replaceState({}, '', newUrl);
   };
   
   // Determine the contact for conversation view
@@ -284,11 +290,6 @@ const Messages = () => {
           <div className="flex items-center justify-center h-[calc(100vh-200px)]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
-        ) : conversations.length === 0 && !selectedConversationId ? (
-          <Card className="p-8 text-center">
-            <p className="text-muted-foreground">You don't have any conversations yet.</p>
-            <p className="text-muted-foreground mt-2">Accept connection requests to start chatting!</p>
-          </Card>
         ) : (
           <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
             {/* Message list sidebar */}
@@ -297,15 +298,21 @@ const Messages = () => {
                 <h2 className="font-medium">Conversations</h2>
               </div>
               <div className="overflow-y-auto h-[calc(100%-60px)]">
-                <MessageList 
-                  conversations={formattedConversations}
-                  selectedId={selectedConversationId}
-                  onSelectConversation={handleSelectConversation}
-                />
+                {conversations.length > 0 ? (
+                  <MessageList 
+                    conversations={formattedConversations}
+                    selectedId={selectedConversationId}
+                    onSelectConversation={handleSelectConversation}
+                  />
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground">
+                    {selectedConversationId ? "Start your first conversation!" : "No conversations yet"}
+                  </div>
+                )}
               </div>
             </div>
             
-            {/* Conversation view */}
+            {/* Conversation view - Always show if we have a selected conversation */}
             <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
               {conversationContact ? (
                 <>
@@ -339,6 +346,29 @@ const Messages = () => {
                 </div>
               )}
             </div>
+            
+            {/* Mobile view - show conversation when selected */}
+            {selectedConversationId && conversationContact && (
+              <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
+                <div className="p-4 border-b flex items-center gap-4">
+                  <button 
+                    onClick={() => setSelectedConversationId(null)}
+                    className="text-primary"
+                  >
+                    ← Back
+                  </button>
+                  <h2 className="font-medium">{conversationContact.name}</h2>
+                </div>
+                <div className="flex-1">
+                  <ConversationView
+                    contact={conversationContact}
+                    messages={formattedMessages}
+                    currentUserId={user?._id || ""}
+                    onSendMessage={handleSendMessage}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
