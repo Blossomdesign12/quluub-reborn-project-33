@@ -15,7 +15,7 @@ const Auth = () => {
   const { toast } = useToast();
   
   // Get the return URL from location state or default to /browse
-  const from = (location.state as { from?: string })?.from || "/browse";
+  const from = (location.state as { from?: string })?.from || "/dashboard";
   
   const handleLogin = async (username: string, password: string) => {
     try {
