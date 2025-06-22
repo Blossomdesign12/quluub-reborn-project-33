@@ -4,12 +4,9 @@ import { StatsCard } from "@/components/ui/stats-card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  ArrowUp, 
-  ArrowDown, 
   Users, 
   Heart, 
   UserCheck, 
-  UserX,
   MessageCircle,
   Search,
   UserCog,
@@ -34,121 +31,85 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-// Mock data - In a real app, this would come from an API
-const memberStats = {
-  total: 1257,
-  male: 614,
-  female: 643,
-  premium: 347,
-  hidden: 58,
-  newToday: 24
-};
-
-const matchStats = {
-  total: 683,
-  successRate: 37,
-  avgMatchesPerUser: 3.2,
-  pendingRequests: 146
-};
-
-const engagementStats = {
-  activeUsers: 876,
-  messagesExchanged: 12684,
-  avgSessionTime: "14.3 min",
-  videoCallsInitiated: 238
-};
-
-const mockUsers = [
-  {
-    id: "1",
-    username: "Ahmad786",
-    name: "Ahmad Ibrahim",
-    gender: "Male",
-    age: 28,
-    location: "London, UK",
-    status: "Premium",
-    lastActive: "Today",
-    joinDate: "2023-05-15",
-    matchCount: 12,
-    profileCompletion: 95
-  },
-  {
-    id: "2",
-    username: "Aisha_22",
-    name: "Aisha Mohammed",
-    gender: "Female",
-    age: 26,
-    location: "Birmingham, UK",
-    status: "Free",
-    lastActive: "Yesterday",
-    joinDate: "2023-06-22",
-    matchCount: 8,
-    profileCompletion: 85
-  },
-  {
-    id: "3",
-    username: "Yusuf_K",
-    name: "Yusuf Khan",
-    gender: "Male",
-    age: 32,
-    location: "Manchester, UK",
-    status: "Premium",
-    lastActive: "3 days ago",
-    joinDate: "2023-04-10",
-    matchCount: 15,
-    profileCompletion: 100
-  },
-  {
-    id: "4",
-    username: "Maryam123",
-    name: "Maryam Ali",
-    gender: "Female",
-    age: 24,
-    location: "Leeds, UK",
-    status: "Free",
-    lastActive: "1 week ago",
-    joinDate: "2023-07-05",
-    matchCount: 5,
-    profileCompletion: 70
-  },
-  {
-    id: "5",
-    username: "ImranH",
-    name: "Imran Hassan",
-    gender: "Male",
-    age: 30,
-    location: "Bristol, UK",
-    status: "Premium",
-    lastActive: "2 days ago",
-    joinDate: "2023-03-18",
-    matchCount: 10,
-    profileCompletion: 90
-  }
-];
+import { useAdminData } from "@/hooks/useAdminData";
+import { formatDistanceToNow } from "date-fns";
 
 export default function AdminDashboard() {
+  const { stats, users, loading, error } = useAdminData();
   const [tabValue, setTabValue] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [genderFilter, setGenderFilter] = useState("all");
   
-  const filteredUsers = mockUsers.filter(user => {
+  // Calculate age from DOB
+  const calculateAge = (dob: Date | string | undefined) => {
+    if (!dob) return 'N/A';
+    
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDifference = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
+  };
+
+  // Filter users based on search and filters
+  const filteredUsers = users.filter(user => {
     // Search query filter
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = user.fname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.lname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.country?.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Status filter
     const matchesStatus = statusFilter === "all" || 
-                         user.status.toLowerCase() === statusFilter.toLowerCase();
+                         user.plan?.toLowerCase() === statusFilter.toLowerCase();
     
     // Gender filter
     const matchesGender = genderFilter === "all" || 
-                         user.gender.toLowerCase() === genderFilter.toLowerCase();
+                         user.gender?.toLowerCase() === genderFilter.toLowerCase();
     
     return matchesSearch && matchesStatus && matchesGender;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-10">
+        <div className="bg-white border-b">
+          <div className="container flex h-16 items-center">
+            <h1 className="text-xl font-bold text-primary">Quluub Admin</h1>
+          </div>
+        </div>
+        <div className="container pt-6 flex justify-center items-center h-[calc(100vh-100px)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-10">
+        <div className="bg-white border-b">
+          <div className="container flex h-16 items-center">
+            <h1 className="text-xl font-bold text-primary">Quluub Admin</h1>
+          </div>
+        </div>
+        <div className="container pt-6">
+          <div className="text-center text-red-600">
+            <p>Error loading admin data: {error.message}</p>
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -188,25 +149,25 @@ export default function AdminDashboard() {
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatsCard 
                 title="Total Members" 
-                value={memberStats.total} 
+                value={stats?.totalMembers || 0} 
                 icon={<Users size={18} />} 
                 trend={{ value: 4.2, positive: true }}
               />
               <StatsCard 
                 title="Total Matches" 
-                value={matchStats.total} 
+                value={stats?.totalMatches || 0} 
                 icon={<Heart size={18} />} 
                 trend={{ value: 2.8, positive: true }}
               />
               <StatsCard 
                 title="Premium Users" 
-                value={memberStats.premium} 
+                value={stats?.premiumMembers || 0} 
                 icon={<Star size={18} />} 
                 trend={{ value: 5.1, positive: true }}
               />
               <StatsCard 
                 title="Active Today" 
-                value={memberStats.newToday} 
+                value={stats?.activeToday || 0} 
                 icon={<UserCheck size={18} />} 
               />
             </section>
@@ -220,19 +181,19 @@ export default function AdminDashboard() {
                       <span className="w-3 h-3 rounded-full bg-primary mr-2"></span>
                       <span>Males</span>
                     </div>
-                    <span className="font-medium">{memberStats.male}</span>
+                    <span className="font-medium">{stats?.maleMembers || 0}</span>
                   </div>
-                  <Progress value={(memberStats.male / memberStats.total) * 100} className="h-2" />
+                  <Progress value={stats?.totalMembers ? (stats.maleMembers / stats.totalMembers) * 100 : 0} className="h-2" />
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-secondary mr-2"></span>
                       <span>Females</span>
                     </div>
-                    <span className="font-medium">{memberStats.female}</span>
+                    <span className="font-medium">{stats?.femaleMembers || 0}</span>
                   </div>
-                  <Progress value={(memberStats.female / memberStats.total) * 100} className="h-2 bg-muted">
-                    <div className="h-full bg-secondary" style={{ width: `${(memberStats.female / memberStats.total) * 100}%` }} />
+                  <Progress value={stats?.totalMembers ? (stats.femaleMembers / stats.totalMembers) * 100 : 0} className="h-2 bg-muted">
+                    <div className="h-full bg-secondary" style={{ width: `${stats?.totalMembers ? (stats.femaleMembers / stats.totalMembers) * 100 : 0}%` }} />
                   </Progress>
                   
                   <div className="flex items-center justify-between mt-4">
@@ -240,10 +201,10 @@ export default function AdminDashboard() {
                       <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
                       <span>Premium Users</span>
                     </div>
-                    <span className="font-medium">{memberStats.premium}</span>
+                    <span className="font-medium">{stats?.premiumMembers || 0}</span>
                   </div>
-                  <Progress value={(memberStats.premium / memberStats.total) * 100} className="h-2 bg-muted">
-                    <div className="h-full bg-green-500" style={{ width: `${(memberStats.premium / memberStats.total) * 100}%` }} />
+                  <Progress value={stats?.totalMembers ? (stats.premiumMembers / stats.totalMembers) * 100 : 0} className="h-2 bg-muted">
+                    <div className="h-full bg-green-500" style={{ width: `${stats?.totalMembers ? (stats.premiumMembers / stats.totalMembers) * 100 : 0}%` }} />
                   </Progress>
                 </div>
               </DashboardCard>
@@ -252,20 +213,20 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span>Success Rate</span>
-                    <span className="font-medium text-green-600">{matchStats.successRate}%</span>
+                    <span className="font-medium text-green-600">{stats?.successRate || 0}%</span>
                   </div>
-                  <Progress value={matchStats.successRate} className="h-2 bg-muted">
-                    <div className="h-full bg-green-500" style={{ width: `${matchStats.successRate}%` }} />
+                  <Progress value={stats?.successRate || 0} className="h-2 bg-muted">
+                    <div className="h-full bg-green-500" style={{ width: `${stats?.successRate || 0}%` }} />
                   </Progress>
                   
                   <div className="flex items-center justify-between mt-4">
                     <span>Avg. Matches Per User</span>
-                    <span className="font-medium">{matchStats.avgMatchesPerUser}</span>
+                    <span className="font-medium">{stats?.avgMatchesPerUser || 0}</span>
                   </div>
                   
                   <div className="flex items-center justify-between mt-2">
                     <span>Pending Connection Requests</span>
-                    <span className="font-medium">{matchStats.pendingRequests}</span>
+                    <span className="font-medium">{stats?.pendingRequests || 0}</span>
                   </div>
                 </div>
               </DashboardCard>
@@ -286,13 +247,13 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockUsers.slice(0, 5).map((user) => (
-                      <TableRow key={user.id}>
+                    {users.slice(0, 5).map((user) => (
+                      <TableRow key={user._id}>
                         <TableCell className="font-medium">{user.username}</TableCell>
                         <TableCell>{user.gender}</TableCell>
-                        <TableCell>{user.age}</TableCell>
-                        <TableCell>{user.location}</TableCell>
-                        <TableCell>{user.joinDate}</TableCell>
+                        <TableCell>{calculateAge(user.dob)}</TableCell>
+                        <TableCell>{user.country || 'N/A'}</TableCell>
+                        <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="sm">View</Button>
                         </TableCell>
@@ -323,9 +284,10 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="all">All Plans</SelectItem>
                     <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="freemium">Freemium</SelectItem>
                   </SelectContent>
                 </Select>
                 
@@ -352,33 +314,43 @@ export default function AdminDashboard() {
                       <TableHead>Gender</TableHead>
                       <TableHead>Age</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Plan</TableHead>
                       <TableHead>Last Active</TableHead>
-                      <TableHead>Profile</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.username}</TableCell>
-                        <TableCell>{user.name}</TableCell>
-                        <TableCell>{user.gender}</TableCell>
-                        <TableCell>{user.age}</TableCell>
-                        <TableCell>{user.location}</TableCell>
+                      <TableRow key={user._id}>
+                        <TableCell className="font-medium">{user.username || 'N/A'}</TableCell>
+                        <TableCell>{`${user.fname || ''} ${user.lname || ''}`.trim() || 'N/A'}</TableCell>
+                        <TableCell>{user.gender || 'N/A'}</TableCell>
+                        <TableCell>{calculateAge(user.dob)}</TableCell>
+                        <TableCell>{user.country || 'N/A'}</TableCell>
                         <TableCell>
-                          <span className={user.status === "Premium" ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs" : "bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"}>
-                            {user.status}
+                          <span className={
+                            user.plan === "premium" || user.plan === "pro" 
+                              ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs" 
+                              : "bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                          }>
+                            {user.plan || 'freemium'}
                           </span>
                         </TableCell>
-                        <TableCell>{user.lastActive}</TableCell>
                         <TableCell>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
-                              style={{ width: `${user.profileCompletion}%` }} 
-                            />
-                          </div>
+                          {user.lastSeen 
+                            ? formatDistanceToNow(new Date(user.lastSeen), { addSuffix: true })
+                            : 'Never'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <span className={
+                            user.status === "active" 
+                              ? "bg-green-100 text-green-700 px-2 py-1 rounded text-xs" 
+                              : "bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs"
+                          }>
+                            {user.status || 'inactive'}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button variant="ghost" size="sm">View</Button>

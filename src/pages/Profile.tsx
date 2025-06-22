@@ -12,9 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Edit, Bell, Calendar as CalendarIcon } from "lucide-react";
+import { Edit, Bell } from "lucide-react";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -22,8 +20,6 @@ import { User } from "@/types/user";
 import { Badge } from "@/components/ui/badge";
 import ProfileImage from "@/components/ProfileImage";
 import { parseJsonField } from "@/utils/dataUtils";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
@@ -34,7 +30,6 @@ const Profile = () => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
   const [editData, setEditData] = useState<Partial<User>>({});
-  const [dobCalendarOpen, setDobCalendarOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -118,30 +113,8 @@ const Profile = () => {
     }
   };
 
-  const validateRequiredFields = () => {
-    const requiredFields = ['fname', 'lname', 'email', 'dob', 'gender', 'country'];
-    const missingFields = [];
-    
-    for (const field of requiredFields) {
-      if (!editData[field] || editData[field] === '') {
-        missingFields.push(field);
-      }
-    }
-    
-    if (missingFields.length > 0) {
-      toast({
-        title: "Required fields missing",
-        description: `Please fill in: ${missingFields.join(', ')}`,
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    return true;
-  };
-
   const handleProfileSave = async () => {
-    if (!profileUser?._id || !validateRequiredFields()) return;
+    if (!profileUser?._id) return;
     
     try {
       await userService.updateProfile(profileUser._id, editData);
@@ -213,70 +186,40 @@ const Profile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="fname">First Name *</Label>
+                    <Label htmlFor="fname">First Name</Label>
                     <Input
                       id="fname"
                       value={editData.fname || ''}
                       onChange={(e) => handleInputChange('fname', e.target.value)}
-                      required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="lname">Last Name *</Label>
+                    <Label htmlFor="lname">Last Name</Label>
                     <Input
                       id="lname"
                       value={editData.lname || ''}
                       onChange={(e) => handleInputChange('lname', e.target.value)}
-                      required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
                       value={editData.email || ''}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      required
                     />
                   </div>
                   
                   <div>
-                    <Label>Date of Birth *</Label>
-                    <Popover open={dobCalendarOpen} onOpenChange={setDobCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !editData.dob && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {editData.dob ? format(new Date(editData.dob), "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={editData.dob ? new Date(editData.dob) : undefined}
-                          onSelect={(date) => {
-                            handleInputChange('dob', date);
-                            setDobCalendarOpen(false);
-                          }}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          defaultMonth={editData.dob ? new Date(editData.dob) : new Date(2000, 0)}
-                          captionLayout="dropdown-buttons"
-                          fromYear={1950}
-                          toYear={new Date().getFullYear()}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={editData.country || ''}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                    />
                   </div>
                 </div>
                 
@@ -287,16 +230,6 @@ const Profile = () => {
                       id="kunya"
                       value={editData.kunya || ''}
                       onChange={(e) => handleInputChange('kunya', e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="country">Country *</Label>
-                    <Input
-                      id="country"
-                      value={editData.country || ''}
-                      onChange={(e) => handleInputChange('country', e.target.value)}
-                      required
                     />
                   </div>
                   
@@ -316,7 +249,7 @@ const Profile = () => {
                       value={editData.summary || ''}
                       onChange={(e) => handleInputChange('summary', e.target.value)}
                       rows={4}
-                      placeholder="Tell others about yourself... 😊"
+                      placeholder="Tell others about yourself..."
                     />
                   </div>
                 </div>
@@ -413,7 +346,7 @@ const Profile = () => {
                 user={profileUser}
                 isCurrentUser={isOwnProfile}
                 onEditClick={() => setIsEditMode(true)}
-                bio={profileUser.summary || "No summary provided 😊"}
+                bio={profileUser.summary || "No summary provided"}
                 interests={[]}
                 lookingFor={profileUser.maritalStatus || "Not specified"}
                 occupation={profileUser.workEducation?.split(',')[0] || undefined}
@@ -424,7 +357,7 @@ const Profile = () => {
               <Card>
                 <CardContent className="p-6 space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Personal Information 👤</h3>
+                    <h3 className="text-lg font-medium mb-2">Personal Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {profileUser.kunya && (
                         <div className="flex justify-between">
@@ -470,7 +403,7 @@ const Profile = () => {
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Religious Practice 🕌</h3>
+                    <h3 className="text-lg font-medium mb-2">Religious Practice</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {profileUser.patternOfSalaah && (
                         <div className="flex justify-between">
@@ -508,7 +441,7 @@ const Profile = () => {
             <TabsContent value="photos">
               <Card>
                 <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">No photos available 📷</p>
+                  <p className="text-muted-foreground">No photos available</p>
                 </CardContent>
               </Card>
             </TabsContent>
