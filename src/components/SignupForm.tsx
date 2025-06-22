@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, CheckCircle, ChevronLeft, ChevronRight, RefreshCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCcw, Eye, EyeOff } from "lucide-react";
 
 interface SignupFormProps {
   onSignup: (name: string, email: string, password: string, gender: string) => void;
@@ -54,12 +54,31 @@ interface RegistrationData {
   gender: string;
 }
 
+const ethnicities = [
+  "African", "Arab", "Asian", "Bengali", "Black", "Caribbean", "Chinese", "East Asian",
+  "European", "Filipino", "Hispanic/Latino", "Indian", "Indigenous", "Japanese",
+  "Korean", "Middle Eastern", "Mixed/Multi-ethnic", "Native American", "Pacific Islander",
+  "South Asian", "Southeast Asian", "Turkish", "Vietnamese", "White", "Other"
+];
+
+const countries = [
+  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh",
+  "Belgium", "Brazil", "Canada", "China", "Denmark", "Egypt", "Finland", "France",
+  "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland",
+  "Italy", "Japan", "Jordan", "Kenya", "Kuwait", "Lebanon", "Malaysia", "Mexico",
+  "Morocco", "Netherlands", "Nigeria", "Norway", "Pakistan", "Philippines", "Poland",
+  "Qatar", "Russia", "Saudi Arabia", "Singapore", "South Africa", "South Korea",
+  "Spain", "Sri Lanka", "Sweden", "Switzerland", "Thailand", "Tunisia", "Turkey",
+  "UAE", "Ukraine", "United Kingdom", "United States", "Vietnam", "Other"
+];
+
 const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [suggestedUsername, setSuggestedUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   const [formData, setFormData] = useState<RegistrationData>({
     email: "",
@@ -72,7 +91,7 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
     cityOfResidence: "",
     summary: "",
     username: "",
-    gender: "male", // Default value
+    gender: "male",
   });
   
   // Generate a random password
@@ -83,16 +102,15 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
     }
   }, [formData.password]);
   
-  // Generate suggested username when first and last name are filled
+  // Generate suggested username when first name is filled (only first name + number)
   useEffect(() => {
-    if (formData.firstName && formData.lastName && step === 7) {
+    if (formData.firstName && step === 7) {
       const firstPart = formData.firstName.toLowerCase().replace(/\s+/g, '');
-      const lastPart = formData.lastName.toLowerCase().replace(/\s+/g, '');
-      const randomNum = Math.floor(Math.random() * 1000);
+      const randomNum = Math.floor(Math.random() * 10000);
       
-      setSuggestedUsername(`${firstPart}${lastPart}${randomNum}`);
+      setSuggestedUsername(`${firstPart}${randomNum}`);
     }
-  }, [formData.firstName, formData.lastName, step]);
+  }, [formData.firstName, step]);
 
   const generatePassword = (length: number) => {
     const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
@@ -113,9 +131,7 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
   };
   
   const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData(prev => ({ ...prev, dateOfBirth: date }));
-    }
+    setFormData(prev => ({ ...prev, dateOfBirth: date || null }));
   };
   
   const handleNextStep = () => {
@@ -225,27 +241,42 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
             
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <div className="flex space-x-2">
+              <div className="relative">
                 <Input 
                   id="password"
                   name="password"
-                  type="text"
+                  type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="flex-1"
                   required
                 />
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    password: generatePassword(10)
-                  }))}
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                </Button>
+                <div className="absolute right-0 top-0 flex">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 px-3"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      password: generatePassword(10)
+                    }))}
+                  >
+                    <RefreshCcw className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
             
@@ -273,21 +304,10 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <div className="border rounded-md p-2">
-                <Calendar
-                  mode="single"
-                  selected={formData.dateOfBirth || undefined}
-                  onSelect={handleDateChange}
-                  disabled={(date) => {
-                    const today = new Date();
-                    const eighteenYearsAgo = new Date();
-                    eighteenYearsAgo.setFullYear(today.getFullYear() - 18);
-                    
-                    return date > eighteenYearsAgo || date < new Date('1900-01-01');
-                  }}
-                  className="rounded-md border"
-                />
-              </div>
+              <DatePicker
+                date={formData.dateOfBirth || undefined}
+                setDate={handleDateChange}
+              />
               {formData.dateOfBirth && (
                 <p className="text-sm text-muted-foreground">
                   Selected: {format(formData.dateOfBirth, "MMMM d, yyyy")}
@@ -321,14 +341,21 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="ethnicity">Ethnicity (not nationality)</Label>
-              <Input
-                id="ethnicity"
-                name="ethnicity"
-                placeholder="Your ethnicity"
-                value={formData.ethnicity}
-                onChange={handleInputChange}
-                required
-              />
+              <Select 
+                value={formData.ethnicity} 
+                onValueChange={(value) => handleSelectChange("ethnicity", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select your ethnicity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ethnicities.map((ethnicity) => (
+                    <SelectItem key={ethnicity} value={ethnicity}>
+                      {ethnicity}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex justify-between">
@@ -357,14 +384,21 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="countryOfResidence">Country of Residence</Label>
-              <Input
-                id="countryOfResidence"
-                name="countryOfResidence"
-                placeholder="Your country"
-                value={formData.countryOfResidence}
-                onChange={handleInputChange}
-                required
-              />
+              <Select 
+                value={formData.countryOfResidence} 
+                onValueChange={(value) => handleSelectChange("countryOfResidence", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countries.map((country) => (
+                    <SelectItem key={country} value={country}>
+                      {country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="flex justify-between">
@@ -603,7 +637,7 @@ const SignupForm = ({ onSignup, onSwitchToLogin }: SignupFormProps) => {
   };
   
   return (
-    <Card className="w-full max-w-md mx-auto shadow-none border-0">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl text-center">
           {step === 1 ? "Create Account" : 
