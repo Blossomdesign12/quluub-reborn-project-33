@@ -1,182 +1,137 @@
-import React from "react";
+
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageSquare } from "lucide-react";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useState } from "react";
+import { Heart, X, Star, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
-export interface MatchCardProps {
+interface MatchCardProps {
   name: string;
+  username?: string;
   age: number;
   location: string;
-  photoUrl: string;
-  tags: string[];
-  userId: string;
+  photoUrl?: string;
   matchPercentage?: number;
-  matchDate?: string;
-  bio?: string;
-  onLike?: () => Promise<void>;
+  tags?: string[];
+  userId: string;
+  summary?: string;
+  onLike?: () => void;
   onPass?: () => void;
   onMessage?: () => void;
-  onChat?: () => void;
+  onFavorite?: () => void;
+  onSendRequest?: () => void;
 }
 
-const MatchCard = ({
-  name,
-  age,
-  location,
-  photoUrl,
-  tags,
+const MatchCard = ({ 
+  name, 
+  username,
+  age, 
+  location, 
+  photoUrl, 
+  matchPercentage, 
+  tags = [], 
   userId,
-  matchPercentage,
-  matchDate,
-  bio,
-  onLike,
-  onPass,
+  summary,
+  onLike, 
+  onPass, 
   onMessage,
-  onChat,
+  onFavorite,
+  onSendRequest
 }: MatchCardProps) => {
-  const [isLiking, setIsLiking] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
-  const handleLike = async () => {
-    if (!onLike) return;
-    setIsLiking(true);
-    try {
-      await onLike();
-    } finally {
-      setIsLiking(false);
-    }
+  const handleFavorite = () => {
+    setIsFavorited(!isFavorited);
+    onFavorite?.();
   };
 
-  // If it's a match card with bio and matchDate, render the match version
-  if (bio && matchDate) {
-    return (
-      <Card className="overflow-hidden">
-        <div className="relative">
-          <AspectRatio ratio={3/4}>
-            {photoUrl ? (
-              <img 
-                src={photoUrl} 
-                alt={name} 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <span className="text-4xl font-bold text-gray-400">
-                  {name.charAt(0)}
-                </span>
-              </div>
-            )}
-          </AspectRatio>
+  const handleHide = () => {
+    setIsHidden(true);
+    onPass?.();
+  };
+
+  const handleSendRequest = () => {
+    onSendRequest?.();
+  };
+
+  if (isHidden) return null;
+
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+        {/* Display summary text instead of profile picture */}
+        <div className="p-4 text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
+            <User className="h-8 w-8 text-white" />
+          </div>
+          {summary && (
+            <p className="text-white text-sm line-clamp-3 max-w-xs">
+              {summary}
+            </p>
+          )}
         </div>
         
-        <CardContent className="p-4">
-          <div className="mb-2">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-medium">{name}, {age}</h3>
-              <Badge variant="outline" className="text-xs">
-                {matchDate}
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-500">{location}</p>
+        {matchPercentage && (
+          <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full">
+            <span className="text-xs font-medium text-primary">{matchPercentage}% match</span>
           </div>
-          
-          <p className="text-sm mb-3 line-clamp-2">{bio}</p>
-          
+        )}
+      </div>
+
+      <CardContent className="p-4">
+        <div className="mb-3">
+          <Link to={`/profile/${userId}`} className="hover:underline">
+            <h3 className="text-lg font-semibold text-primary cursor-pointer">
+              {username || name}
+            </h3>
+          </Link>
+          <p className="text-sm text-muted-foreground">{age} • {location}</p>
+        </div>
+
+        {tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
-            {tags.map((tag, index) => (
+            {tags.slice(0, 3).map((tag, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))}
+            {tags.length > 3 && (
+              <Badge variant="secondary" className="text-xs">
+                +{tags.length - 3}
+              </Badge>
+            )}
           </div>
-          
-          <Button 
-            className="w-full"
-            onClick={onChat}
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Start chatting
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Otherwise render the original swipe card
-  return (
-    <Card className="overflow-hidden">
-      <div className="relative">
-        <AspectRatio ratio={3/4}>
-          {photoUrl ? (
-            <img 
-              src={photoUrl} 
-              alt={name} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-              <span className="text-4xl font-bold text-gray-400">
-                {name.charAt(0)}
-              </span>
-            </div>
-          )}
-        </AspectRatio>
-        
-        {matchPercentage && (
-          <Badge className="absolute top-2 right-2 bg-teal-500">
-            {matchPercentage}% Match
-          </Badge>
         )}
-      </div>
-      
-      <CardContent className="p-4">
-        <div className="mb-4">
-          <h3 className="text-lg font-medium">{name}, {age}</h3>
-          <p className="text-sm text-gray-500">{location}</p>
-        </div>
-        
-        <div className="flex flex-wrap gap-1 mb-4">
-          {tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-        
+
         <div className="flex gap-2">
-          {onPass && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full flex-1 border-red-200 hover:bg-red-50 hover:text-red-500"
-              onClick={onPass}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          )}
-          {onMessage && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full flex-1 border-blue-200 hover:bg-blue-50 hover:text-blue-500"
-              onClick={onMessage}
-            >
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-          )}
-          {onLike && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="rounded-full flex-1 border-green-200 hover:bg-green-50 hover:text-green-500"
-              onClick={handleLike}
-              disabled={isLiking}
-            >
-              <Heart className={`h-5 w-5 ${isLiking ? 'animate-pulse' : ''}`} />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant={isFavorited ? "default" : "outline"}
+            onClick={handleFavorite}
+            className="flex-1"
+          >
+            <Star className={`h-4 w-4 mr-1 ${isFavorited ? 'fill-current' : ''}`} />
+            {isFavorited ? 'Favorited' : 'Favorite'}
+          </Button>
+          
+          <Button
+            size="sm"
+            onClick={handleSendRequest}
+            className="flex-1"
+          >
+            <Heart className="h-4 w-4 mr-1" />
+            Send Request
+          </Button>
+          
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleHide}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

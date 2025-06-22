@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import TopNavbar from "@/components/TopNavbar";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User } from "@/types/user";
 import { DatabaseStats } from "@/components/DatabaseStats";
-import { Heart, User as UserIcon, ArrowRight, MessageSquare } from "lucide-react";
+import { Heart, User as UserIcon, ArrowRight, MessageSquare, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { relationshipService, chatService } from "@/lib/api-client";
@@ -16,13 +17,16 @@ import { calculateAge } from "@/utils/dataUtils";
 const Dashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("matches");
   const [stats, setStats] = useState({
     matches: 0,
+    favorites: 0,
     receivedRequests: 0,
     sentRequests: 0,
     profileViews: 0
   });
   const [matchesList, setMatchesList] = useState<any[]>([]);
+  const [favoritesList, setFavoritesList] = useState<any[]>([]);
   
   // Fetch relationship stats from the backend
   const { data: relationshipData, isLoading, error } = useQuery({
@@ -40,11 +44,13 @@ const Dashboard = () => {
         
         return {
           matches: matchesData?.matches?.length || 0,
+          favorites: 0, // This would need a separate endpoint for favorites
           receivedRequests: pendingData?.requests?.length || 0,
           sentRequests: 0, // This would need a separate endpoint if available
           profileViews: 0, // This would need a separate endpoint if available
           unreadMessages: unreadCount || 0,
-          matchesList: matchesData?.matches || []
+          matchesList: matchesData?.matches || [],
+          favoritesList: [] // This would come from favorites endpoint
         };
       } catch (err) {
         console.error("Failed to fetch relationship data:", err);
@@ -55,15 +61,17 @@ const Dashboard = () => {
         });
         return {
           matches: 0,
+          favorites: 0,
           receivedRequests: 0,
           sentRequests: 0,
           profileViews: 0,
           unreadMessages: 0,
-          matchesList: []
+          matchesList: [],
+          favoritesList: []
         };
       }
     },
-    enabled: !!user, // Only run query if user is logged in
+    enabled: !!user,
   });
   
   // Update stats when data is loaded
@@ -71,20 +79,19 @@ const Dashboard = () => {
     if (relationshipData) {
       setStats({
         matches: relationshipData.matches,
+        favorites: relationshipData.favorites,
         receivedRequests: relationshipData.receivedRequests,
         sentRequests: relationshipData.sentRequests,
         profileViews: relationshipData.profileViews
       });
       setMatchesList(relationshipData.matchesList);
+      setFavoritesList(relationshipData.favoritesList);
     }
   }, [relationshipData]);
 
   // Handle resend validation email
   const handleResendEmail = async () => {
     try {
-      // This would typically call an API endpoint
-      // await authService.resendValidationEmail();
-      
       toast({
         title: "Email sent",
         description: "Please check your inbox for the validation email",
@@ -99,14 +106,155 @@ const Dashboard = () => {
   };
 
   const handleMessageMatch = (matchId: string) => {
-    // Navigate to messages with the specific conversation ID
     window.location.href = `/messages?conversation=${matchId}`;
   };
 
+  const handleSendRequest = (userId: string) => {
+    // Send connection request
+    toast({
+      title: "Request sent",
+      description: "Your connection request has been sent",
+    });
+  };
+
+  const handleRemoveFromFavorites = (userId: string) => {
+    // Remove from favorites
+    setFavoritesList(prev => prev.filter(fav => fav._id !== userId));
+    toast({
+      title: "Removed from favorites",
+      description: "User has been removed from your favorites",
+    });
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "matches":
+        return matchesList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {matchesList.slice(0, 6).map((match) => (
+              <Card key={match._id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-semibold text-primary">
+                        {match.fname?.charAt(0)}{match.lname?.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">
+                        {match.fname} {match.lname}
+                        {match.dob && `, ${calculateAge(match.dob)}`}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {match.country || "Location not specified"}
+                      </p>
+                    </div>
+                  </div>
+                  {match.summary && (
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {match.summary}
+                    </p>
+                  )}
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => handleMessageMatch(match._id)}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Message
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <Heart className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg text-muted-foreground">No matches yet</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.href = '/search'}
+            >
+              Browse potential matches
+            </Button>
+          </div>
+        );
+
+      case "favorites":
+        return favoritesList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {favoritesList.map((favorite) => (
+              <Card key={favorite._id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-semibold text-primary">
+                        {favorite.fname?.charAt(0)}{favorite.lname?.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">
+                        {favorite.fname} {favorite.lname}
+                        {favorite.dob && `, ${calculateAge(favorite.dob)}`}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {favorite.country || "Location not specified"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleSendRequest(favorite._id)}
+                    >
+                      Send Request
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleRemoveFromFavorites(favorite._id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <Star className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg text-muted-foreground">No favorites yet</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.href = '/search'}
+            >
+              Browse to add favorites
+            </Button>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="py-12 text-center">
+            <p className="text-lg text-muted-foreground">No data available</p>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pt-16 pb-20">
+      <TopNavbar />
       <div className="container py-6">
-        {/* Email validation banner - only show if user's email is not validated */}
+        {/* Email validation banner */}
         {user && !user.emailVerified && (
           <Alert className="mb-6 bg-yellow-50 border-yellow-200">
             <AlertDescription className="flex items-center gap-2">
@@ -124,9 +272,8 @@ const Dashboard = () => {
           </Alert>
         )}
         
-        {/* Stats Overview */}
+        {/* Stats Overview - keep existing code */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Matches */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -138,12 +285,22 @@ const Dashboard = () => {
             </CardContent>
           </Card>
           
-          {/* Received Requests */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium">Favorites</h3>
+                <Star className="h-5 w-5 text-yellow-500" />
+              </div>
+              <p className="text-2xl font-bold">{stats.favorites}</p>
+              <p className="text-xs text-muted-foreground mt-1">Added to favorites</p>
+            </CardContent>
+          </Card>
+          
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-medium">Received Requests</h3>
-                <svg className="h-5 w-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="h-5 w-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <rect width="18" height="18" x="3" y="3" rx="2" strokeWidth="2"></rect>
                   <path d="M9 12h6m-3-3v6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
                 </svg>
@@ -153,12 +310,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
           
-          {/* Sent Requests */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-medium">Sent Requests</h3>
-                <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="M5 12h14M19 12l-4-4m0 8l4-4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
                 </svg>
               </div>
@@ -166,24 +322,9 @@ const Dashboard = () => {
               <p className="text-xs text-muted-foreground mt-1">= 0% this week</p>
             </CardContent>
           </Card>
-          
-          {/* Profile Views */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-medium">Profile Views</h3>
-                <svg className="h-5 w-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                  <path d="M2 12s3-9 10-9 10 9 10 9-3 9-10 9-10-9-10-9z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                </svg>
-              </div>
-              <p className="text-2xl font-bold">{stats.profileViews}</p>
-              <p className="text-xs text-muted-foreground mt-1">= 0% this week</p>
-            </CardContent>
-          </Card>
         </div>
         
-        {/* Advertisement Section */}
+        {/* Advertisement Section - keep existing code */}
         <Card className="mt-6">
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
@@ -196,76 +337,47 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Tabs Section */}
+        {/* Updated Tabs Section */}
         <div className="mt-6">
           <div className="border-b">
             <div className="flex overflow-x-auto">
               <Button 
                 variant="link" 
-                className="text-primary border-b-2 border-primary px-4 pb-2"
-                onClick={() => {}}
+                className={`px-4 pb-2 ${activeTab === 'matches' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('matches')}
               >
                 MATCHES ({stats.matches})
               </Button>
               <Button 
                 variant="link" 
-                className="text-gray-500 px-4 pb-2"
-                onClick={() => {}}
+                className={`px-4 pb-2 ${activeTab === 'favorites' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('favorites')}
+              >
+                FAVORITES ({stats.favorites})
+              </Button>
+              <Button 
+                variant="link" 
+                className={`px-4 pb-2 ${activeTab === 'received' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('received')}
               >
                 RECEIVED REQUESTS ({stats.receivedRequests})
               </Button>
               <Button 
                 variant="link" 
-                className="text-gray-500 px-4 pb-2"
-                onClick={() => {}}
+                className={`px-4 pb-2 ${activeTab === 'sent' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+                onClick={() => setActiveTab('sent')}
               >
                 SENT REQUESTS ({stats.sentRequests})
               </Button>
             </div>
           </div>
           
-          {/* Matches Tab Content */}
-          {matchesList.length > 0 ? (
-            <div className="py-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                {matchesList.slice(0, 6).map((match) => (
-                  <Card key={match._id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                          <span className="text-lg font-semibold text-primary">
-                            {match.fname?.charAt(0)}{match.lname?.charAt(0)}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="font-medium">
-                            {match.fname} {match.lname}
-                            {match.dob && `, ${calculateAge(match.dob)}`}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {match.country || "Location not specified"}
-                          </p>
-                        </div>
-                      </div>
-                      {match.summary && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {match.summary}
-                        </p>
-                      )}
-                      <Button 
-                        size="sm" 
-                        className="w-full"
-                        onClick={() => handleMessageMatch(match._id)}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Message
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              {/* View All Matches Button */}
+          {/* Tab Content */}
+          <div className="py-6">
+            {renderTabContent()}
+            
+            {/* View All Button for matches */}
+            {activeTab === 'matches' && matchesList.length > 6 && (
               <div className="text-center">
                 <Link to="/matches">
                   <Button variant="outline">
@@ -274,29 +386,11 @@ const Dashboard = () => {
                   </Button>
                 </Link>
               </div>
-            </div>
-          ) : (
-            <div className="py-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 16V12" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 8H12.01" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <p className="text-lg text-muted-foreground">No matches yet</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => window.location.href = '/browse'}
-              >
-                Browse potential matches
-              </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         
-        {/* Feed Section */}
+        {/* Feed Section - keep existing code */}
         <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Feed</h3>

@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import TopNavbar from "@/components/TopNavbar";
 import Navbar from "@/components/Navbar";
 import ProfileEditSections from "@/components/ProfileEditSections";
 import ProfileHeader from "@/components/ProfileHeader";
@@ -7,7 +9,12 @@ import ProfileInfo from "@/components/ProfileInfo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Bell } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Edit, Bell, Calendar as CalendarIcon } from "lucide-react";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
@@ -15,19 +22,22 @@ import { User } from "@/types/user";
 import { Badge } from "@/components/ui/badge";
 import ProfileImage from "@/components/ProfileImage";
 import { parseJsonField } from "@/utils/dataUtils";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const Profile = () => {
   const { user: currentUser } = useAuth();
   const { userId } = useParams<{ userId: string }>();
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(true); // Always start in edit mode as requested
+  const [isEditMode, setIsEditMode] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [hasPendingRequests, setHasPendingRequests] = useState(false);
+  const [editData, setEditData] = useState<Partial<User>>({});
+  const [dobCalendarOpen, setDobCalendarOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Determine if showing own profile or someone else's
   const isOwnProfile = !userId || (currentUser?._id === userId);
   const displayUserId = userId || currentUser?._id;
   
@@ -38,10 +48,11 @@ const Profile = () => {
       try {
         setLoading(true);
         const userData = isOwnProfile
-          ? currentUser // Use current user data if viewing own profile
+          ? currentUser
           : await userService.getProfile(displayUserId);
           
         setProfileUser(userData || null);
+        setEditData(userData || {});
         console.log("Profile user data:", userData);
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -58,7 +69,6 @@ const Profile = () => {
     fetchUserProfile();
   }, [displayUserId, isOwnProfile, currentUser, toast]);
   
-  // Fetch pending requests if viewing own profile
   useEffect(() => {
     const fetchPendingRequests = async () => {
       if (!isOwnProfile) return;
@@ -80,17 +90,14 @@ const Profile = () => {
     }
   }, [isOwnProfile]);
   
-  // Handle accepting or rejecting connection requests
   const handleConnectionResponse = async (relationshipId: string, action: 'matched' | 'rejected') => {
     try {
       await relationshipService.respondToRequest(relationshipId, action);
       
-      // Update the pending requests list
       setPendingRequests(prev => prev.filter(
         req => req.relationship.id !== relationshipId
       ));
       
-      // Show success toast
       toast({
         title: action === 'matched' ? 'Connection Accepted' : 'Connection Declined',
         description: action === 'matched' 
@@ -98,7 +105,6 @@ const Profile = () => {
           : 'The connection request has been declined',
       });
       
-      // If no more pending requests, hide notification area
       if (pendingRequests.length <= 1) {
         setHasPendingRequests(false);
       }
@@ -112,12 +118,35 @@ const Profile = () => {
     }
   };
 
-  const handleProfileSave = async (updatedData: Partial<User>) => {
-    if (!profileUser?._id) return;
+  const validateRequiredFields = () => {
+    const requiredFields = ['fname', 'lname', 'email', 'dob', 'gender', 'country'];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (!editData[field] || editData[field] === '') {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      toast({
+        title: "Required fields missing",
+        description: `Please fill in: ${missingFields.join(', ')}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleProfileSave = async () => {
+    if (!profileUser?._id || !validateRequiredFields()) return;
     
     try {
-      await userService.updateProfile(profileUser._id, updatedData);
-      setProfileUser(prev => prev ? { ...prev, ...updatedData } : null);
+      await userService.updateProfile(profileUser._id, editData);
+      setProfileUser(prev => prev ? { ...prev, ...editData } : null);
+      setIsEditMode(false);
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully",
@@ -132,9 +161,14 @@ const Profile = () => {
     }
   };
 
+  const handleInputChange = (field: string, value: any) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <TopNavbar />
         <div className="container py-6 flex justify-center items-center h-[calc(100vh-100px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -144,7 +178,8 @@ const Profile = () => {
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <TopNavbar />
         <div className="container py-6">
           <Card>
             <CardContent className="p-8 text-center">
@@ -156,21 +191,146 @@ const Profile = () => {
     );
   }
 
-  // If it's own profile and in edit mode, show the new profile edit sections
   if (isOwnProfile && isEditMode) {
     return (
-      <ProfileEditSections
-        user={profileUser}
-        onSave={handleProfileSave}
-        onCancel={() => setIsEditMode(false)}
-      />
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <TopNavbar />
+        <div className="container py-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Edit Profile</h2>
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={() => setIsEditMode(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleProfileSave}>
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="fname">First Name *</Label>
+                    <Input
+                      id="fname"
+                      value={editData.fname || ''}
+                      onChange={(e) => handleInputChange('fname', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="lname">Last Name *</Label>
+                    <Input
+                      id="lname"
+                      value={editData.lname || ''}
+                      onChange={(e) => handleInputChange('lname', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={editData.email || ''}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label>Date of Birth *</Label>
+                    <Popover open={dobCalendarOpen} onOpenChange={setDobCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !editData.dob && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {editData.dob ? format(new Date(editData.dob), "PPP") : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={editData.dob ? new Date(editData.dob) : undefined}
+                          onSelect={(date) => {
+                            handleInputChange('dob', date);
+                            setDobCalendarOpen(false);
+                          }}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          defaultMonth={editData.dob ? new Date(editData.dob) : new Date(2000, 0)}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1950}
+                          toYear={new Date().getFullYear()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="kunya">Nickname/Kunya</Label>
+                    <Input
+                      id="kunya"
+                      value={editData.kunya || ''}
+                      onChange={(e) => handleInputChange('kunya', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="country">Country *</Label>
+                    <Input
+                      id="country"
+                      value={editData.country || ''}
+                      onChange={(e) => handleInputChange('country', e.target.value)}
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="nationality">Nationality</Label>
+                    <Input
+                      id="nationality"
+                      value={editData.nationality || ''}
+                      onChange={(e) => handleInputChange('nationality', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="summary">Summary</Label>
+                    <Textarea
+                      id="summary"
+                      value={editData.summary || ''}
+                      onChange={(e) => handleInputChange('summary', e.target.value)}
+                      rows={4}
+                      placeholder="Tell others about yourself... 😊"
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
-  // Otherwise show the regular profile view (for viewing other profiles or when not in edit mode)
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <TopNavbar />
       <div className="container py-6">
         {/* Pending Connection Requests Notification */}
         {isOwnProfile && hasPendingRequests && (
@@ -253,7 +413,7 @@ const Profile = () => {
                 user={profileUser}
                 isCurrentUser={isOwnProfile}
                 onEditClick={() => setIsEditMode(true)}
-                bio={profileUser.summary || "No summary provided"}
+                bio={profileUser.summary || "No summary provided 😊"}
                 interests={[]}
                 lookingFor={profileUser.maritalStatus || "Not specified"}
                 occupation={profileUser.workEducation?.split(',')[0] || undefined}
@@ -264,7 +424,7 @@ const Profile = () => {
               <Card>
                 <CardContent className="p-6 space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Personal Information</h3>
+                    <h3 className="text-lg font-medium mb-2">Personal Information 👤</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {profileUser.kunya && (
                         <div className="flex justify-between">
@@ -310,7 +470,7 @@ const Profile = () => {
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Religious Practice</h3>
+                    <h3 className="text-lg font-medium mb-2">Religious Practice 🕌</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {profileUser.patternOfSalaah && (
                         <div className="flex justify-between">
@@ -348,13 +508,14 @@ const Profile = () => {
             <TabsContent value="photos">
               <Card>
                 <CardContent className="p-8 text-center">
-                  <p className="text-muted-foreground">No photos available</p>
+                  <p className="text-muted-foreground">No photos available 📷</p>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
       </div>
+      <Navbar />
     </div>
   );
 };

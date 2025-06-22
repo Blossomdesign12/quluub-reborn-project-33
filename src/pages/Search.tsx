@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import TopNavbar from "@/components/TopNavbar";
 import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
 import { useBrowseUsers } from "@/hooks/useBrowseUsers";
@@ -22,10 +22,13 @@ import { useNavigate } from "react-router-dom";
 
 const Search = () => {
   const [ageRange, setAgeRange] = useState([18, 60]);
-  const [heightRange, setHeightRange] = useState([150, 200]); // In cm
-  const [weightRange, setWeightRange] = useState([30, 125]); // In kg
+  const [heightRange, setHeightRange] = useState([150, 200]);
+  const [weightRange, setWeightRange] = useState([30, 125]);
   const [location, setLocation] = useState("anywhere");
   const [nationality, setNationality] = useState("any");
+  const [maritalStatus, setMaritalStatus] = useState("any");
+  const [patternOfSalaah, setPatternOfSalaah] = useState("any");
+  const [sortBy, setSortBy] = useState("newest");
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [showHijabOnly, setShowHijabOnly] = useState(false);
   const [showBeardOnly, setShowBeardOnly] = useState(false);
@@ -33,7 +36,6 @@ const Search = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Filter params for API
   const [filterParams, setFilterParams] = useState<{
     country?: string;
     nationality?: string;
@@ -42,13 +44,10 @@ const Search = () => {
     showAll: true
   });
   
-  // Use the hook to fetch users
   const { users, isLoading, error } = useBrowseUsers(filterParams);
-  
-  // State to track which users have pending connection requests
   const [pendingConnections, setPendingConnections] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   
-  // Calculate age from DOB
   const calculateAge = (dob: string | Date | undefined) => {
     if (!dob) return null;
     const birthDate = new Date(dob);
@@ -63,7 +62,6 @@ const Search = () => {
     return age;
   };
   
-  // Extract tags/interests for display
   const extractTags = (user: User) => {
     const tags: string[] = [];
     
@@ -72,7 +70,16 @@ const Search = () => {
       if (workParts.length > 0) tags.push(workParts[0]);
     }
     
-    if (user.patternOfSalaah) tags.push(user.patternOfSalaah === 'always' ? 'Practicing' : 'Moderate');
+    if (user.patternOfSalaah) {
+      // Return to normal pattern names
+      const patternMap: { [key: string]: string } = {
+        'always': 'Always prays',
+        'usually': 'Usually prays', 
+        'sometimes': 'Sometimes prays',
+        'rarely': 'Rarely prays'
+      };
+      tags.push(patternMap[user.patternOfSalaah] || user.patternOfSalaah);
+    }
     
     if (user.maritalStatus) tags.push(user.maritalStatus);
     
@@ -83,12 +90,11 @@ const Search = () => {
           tags.push(traitsArray[0]);
         }
       } catch (e) {
-        // If parsing fails, just use the string
         if (typeof user.traits === 'string') tags.push(user.traits);
       }
     }
     
-    return tags.slice(0, 3); // Return up to 3 tags
+    return tags.slice(0, 3);
   };
   
   const handleApplyFilters = () => {
@@ -98,13 +104,10 @@ const Search = () => {
       showAll: true
     };
     
-    // Add country filter if selected
     if (location !== "anywhere") {
-      // Convert location selection to country name
-      params.country = location === "anywhere" ? undefined : location;
+      params.country = location;
     }
     
-    // Add nationality filter if selected
     if (nationality !== "any") {
       params.nationality = nationality;
     }
@@ -113,45 +116,69 @@ const Search = () => {
     setIsApplyingFilters(false);
   };
   
-  const handleSendInterest = async (userId: string) => {
+  const handleSendRequest = async (userId: string) => {
     try {
       await relationshipService.sendRequest(userId);
       setPendingConnections(prev => [...prev, userId]);
       toast({
-        title: "Interest Sent",
-        description: "Your interest has been sent successfully.",
+        title: "Request Sent",
+        description: "Your connection request has been sent successfully.",
       });
     } catch (error) {
-      console.error("Failed to send interest:", error);
+      console.error("Failed to send request:", error);
       toast({
         title: "Error",
-        description: "Failed to send interest. Please try again.",
+        description: "Failed to send request. Please try again.",
         variant: "destructive",
       });
     }
   };
+
+  const handleAddToFavorites = (userId: string) => {
+    setFavorites(prev => [...prev, userId]);
+    toast({
+      title: "Added to Favorites",
+      description: "User has been added to your favorites.",
+    });
+  };
   
   const handlePass = (userId: string) => {
-    // In a real app, you might want to track passed users
     toast({
-      title: "Passed",
-      description: "You've passed on this profile.",
+      title: "Hidden",
+      description: "This profile has been hidden from your list.",
     });
   };
 
-  const handleStartChat = (userId: string) => {
-    navigate(`/messages?userId=${userId}`);
-  };
+  // Sort users based on selection
+  const sortedUsers = users ? [...users].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    } else if (sortBy === "lastSeen") {
+      return new Date(b.lastSeen || 0).getTime() - new Date(a.lastSeen || 0).getTime();
+    }
+    return 0;
+  }) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <TopNavbar />
       <div className="container py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Filter sidebar */}
           <Card className="md:col-span-1 h-fit">
             <CardContent className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Search Filters</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Search Filters</h2>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest</SelectItem>
+                    <SelectItem value="lastSeen">Last Seen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="space-y-6">
                 <div>
@@ -218,6 +245,9 @@ const Search = () => {
                       <SelectItem value="Saudi Arabia">Saudi Arabia</SelectItem>
                       <SelectItem value="United States">United States</SelectItem>
                       <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                      <SelectItem value="Canada">Canada</SelectItem>
+                      <SelectItem value="Australia">Australia</SelectItem>
+                      <SelectItem value="South Africa">South Africa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -239,13 +269,48 @@ const Search = () => {
                       <SelectItem value="Indian">Indian</SelectItem>
                       <SelectItem value="Malaysian">Malaysian</SelectItem>
                       <SelectItem value="Indonesian">Indonesian</SelectItem>
+                      <SelectItem value="Turkish">Turkish</SelectItem>
+                      <SelectItem value="Moroccan">Moroccan</SelectItem>
+                      <SelectItem value="Lebanese">Lebanese</SelectItem>
+                      <SelectItem value="Syrian">Syrian</SelectItem>
+                      <SelectItem value="Bangladeshi">Bangladeshi</SelectItem>
+                      <SelectItem value="Iranian">Iranian</SelectItem>
+                      <SelectItem value="Afghan">Afghan</SelectItem>
+                      <SelectItem value="Somali">Somali</SelectItem>
+                      <SelectItem value="Sudanese">Sudanese</SelectItem>
+                      <SelectItem value="Yemeni">Yemeni</SelectItem>
+                      <SelectItem value="Iraqi">Iraqi</SelectItem>
+                      <SelectItem value="Kuwaiti">Kuwaiti</SelectItem>
+                      <SelectItem value="Emirati">Emirati</SelectItem>
+                      <SelectItem value="Qatari">Qatari</SelectItem>
+                      <SelectItem value="Bahraini">Bahraini</SelectItem>
+                      <SelectItem value="Omani">Omani</SelectItem>
+                      <SelectItem value="Algerian">Algerian</SelectItem>
+                      <SelectItem value="Tunisian">Tunisian</SelectItem>
+                      <SelectItem value="Libyan">Libyan</SelectItem>
+                      <SelectItem value="American">American</SelectItem>
+                      <SelectItem value="British">British</SelectItem>
+                      <SelectItem value="Canadian">Canadian</SelectItem>
+                      <SelectItem value="Australian">Australian</SelectItem>
+                      <SelectItem value="German">German</SelectItem>
+                      <SelectItem value="French">French</SelectItem>
+                      <SelectItem value="Italian">Italian</SelectItem>
+                      <SelectItem value="Spanish">Spanish</SelectItem>
+                      <SelectItem value="Dutch">Dutch</SelectItem>
+                      <SelectItem value="Swedish">Swedish</SelectItem>
+                      <SelectItem value="Norwegian">Norwegian</SelectItem>
+                      <SelectItem value="Danish">Danish</SelectItem>
+                      <SelectItem value="Finnish">Finnish</SelectItem>
+                      <SelectItem value="Albanian">Albanian</SelectItem>
+                      <SelectItem value="Bosnian">Bosnian</SelectItem>
+                      <SelectItem value="Kosovan">Kosovan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Marital Status</label>
-                  <Select defaultValue="any">
+                  <Select value={maritalStatus} onValueChange={setMaritalStatus}>
                     <SelectTrigger>
                       <SelectValue placeholder="Any status" />
                     </SelectTrigger>
@@ -261,7 +326,7 @@ const Search = () => {
                 
                 <div>
                   <label className="text-sm font-medium mb-2 block">Pattern of Salaah</label>
-                  <Select defaultValue="any">
+                  <Select value={patternOfSalaah} onValueChange={setPatternOfSalaah}>
                     <SelectTrigger>
                       <SelectValue placeholder="Any practice" />
                     </SelectTrigger>
@@ -271,6 +336,7 @@ const Search = () => {
                       <SelectItem value="usually">Usually prays</SelectItem>
                       <SelectItem value="sometimes">Sometimes prays</SelectItem>
                       <SelectItem value="rarely">Rarely prays</SelectItem>
+                      <SelectItem value="never">Never prays</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -324,12 +390,11 @@ const Search = () => {
                   <p className="text-center text-red-500">Error loading users. Please try again.</p>
                 </CardContent>
               </Card>
-            ) : users.length > 0 ? (
+            ) : sortedUsers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {users.map((user) => {
+                {sortedUsers.map((user) => {
                   const age = calculateAge(user.dob) || 0;
                   
-                  // Apply client-side filtering based on age
                   if (age < ageRange[0] || age > ageRange[1]) {
                     return null;
                   }
@@ -338,15 +403,16 @@ const Search = () => {
                     <MatchCard 
                       key={user._id}
                       name={`${user.fname} ${user.lname}`}
+                      username={user.username}
                       age={age}
                       location={user.country || "Location not specified"}
-                      photoUrl={user.profile_pic || ""}
-                      matchPercentage={Math.floor(Math.random() * 30) + 70} // Placeholder for now
+                      summary={user.summary}
+                      matchPercentage={Math.floor(Math.random() * 30) + 70}
                       tags={extractTags(user)}
                       userId={user._id}
-                      onLike={() => handleSendInterest(user._id!)}
+                      onFavorite={() => handleAddToFavorites(user._id!)}
+                      onSendRequest={() => handleSendRequest(user._id!)}
                       onPass={() => handlePass(user._id!)}
-                      onMessage={() => handleStartChat(user._id!)}
                     />
                   );
                 })}
@@ -361,6 +427,7 @@ const Search = () => {
           </div>
         </div>
       </div>
+      <Navbar />
     </div>
   );
 };
