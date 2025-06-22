@@ -16,11 +16,14 @@ interface MatchCardProps {
   tags?: string[];
   userId: string;
   summary?: string;
+  matchDate?: string;
+  bio?: string;
   onLike?: () => void;
   onPass?: () => void;
   onMessage?: () => void;
   onFavorite?: () => void;
   onSendRequest?: () => void;
+  onChat?: () => void;
 }
 
 const MatchCard = ({ 
@@ -33,11 +36,14 @@ const MatchCard = ({
   tags = [], 
   userId,
   summary,
+  matchDate,
+  bio,
   onLike, 
   onPass, 
   onMessage,
   onFavorite,
-  onSendRequest
+  onSendRequest,
+  onChat
 }: MatchCardProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
@@ -56,6 +62,10 @@ const MatchCard = ({
     onSendRequest?.();
   };
 
+  const handleChat = () => {
+    onChat?.();
+  };
+
   if (isHidden) return null;
 
   return (
@@ -66,9 +76,9 @@ const MatchCard = ({
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-2 mx-auto">
             <User className="h-8 w-8 text-white" />
           </div>
-          {summary && (
+          {(summary || bio) && (
             <p className="text-white text-sm line-clamp-3 max-w-xs">
-              {summary}
+              {summary || bio}
             </p>
           )}
         </div>
@@ -76,6 +86,12 @@ const MatchCard = ({
         {matchPercentage && (
           <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full">
             <span className="text-xs font-medium text-primary">{matchPercentage}% match</span>
+          </div>
+        )}
+
+        {matchDate && (
+          <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 rounded-full">
+            <span className="text-xs font-medium text-primary">{matchDate}</span>
           </div>
         )}
       </div>
@@ -106,24 +122,39 @@ const MatchCard = ({
         )}
 
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant={isFavorited ? "default" : "outline"}
-            onClick={handleFavorite}
-            className="flex-1"
-          >
-            <Star className={`h-4 w-4 mr-1 ${isFavorited ? 'fill-current' : ''}`} />
-            {isFavorited ? 'Favorited' : 'Favorite'}
-          </Button>
+          {onFavorite && (
+            <Button
+              size="sm"
+              variant={isFavorited ? "default" : "outline"}
+              onClick={handleFavorite}
+              className="flex-1"
+            >
+              <Star className={`h-4 w-4 mr-1 ${isFavorited ? 'fill-current' : ''}`} />
+              {isFavorited ? 'Favorited' : 'Favorite'}
+            </Button>
+          )}
           
-          <Button
-            size="sm"
-            onClick={handleSendRequest}
-            className="flex-1"
-          >
-            <Heart className="h-4 w-4 mr-1" />
-            Send Request
-          </Button>
+          {onSendRequest && (
+            <Button
+              size="sm"
+              onClick={handleSendRequest}
+              className="flex-1"
+            >
+              <Heart className="h-4 w-4 mr-1" />
+              Send Request
+            </Button>
+          )}
+
+          {onChat && (
+            <Button
+              size="sm"
+              onClick={handleChat}
+              className="flex-1"
+            >
+              <Heart className="h-4 w-4 mr-1" />
+              Message
+            </Button>
+          )}
           
           <Button
             size="sm"
