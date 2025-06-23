@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -105,6 +104,48 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
     { icon: "🕌", label: "Deen" }
   ];
 
+  // Comprehensive nationality options
+  const nationalityOptions = [
+    "Afghan", "Albanian", "Algerian", "American", "Andorran", "Angolan", "Antiguans", "Argentinean", "Armenian", "Australian",
+    "Austrian", "Azerbaijani", "Bahamian", "Bahraini", "Bangladeshi", "Barbadian", "Barbudans", "Batswana", "Belarusian", "Belgian",
+    "Belizean", "Beninese", "Bhutanese", "Bolivian", "Bosnian", "Brazilian", "British", "Bruneian", "Bulgarian", "Burkinabe",
+    "Burmese", "Burundian", "Cambodian", "Cameroonian", "Canadian", "Cape Verdean", "Central African", "Chadian", "Chilean", "Chinese",
+    "Colombian", "Comoran", "Congolese", "Costa Rican", "Croatian", "Cuban", "Cypriot", "Czech", "Danish", "Djibouti",
+    "Dominican", "Dutch", "East Timorese", "Ecuadorean", "Egyptian", "Emirian", "Equatorial Guinean", "Eritrean", "Estonian", "Ethiopian",
+    "Fijian", "Filipino", "Finnish", "French", "Gabonese", "Gambian", "Georgian", "German", "Ghanaian", "Greek",
+    "Grenadian", "Guatemalan", "Guinea-Bissauan", "Guinean", "Guyanese", "Haitian", "Herzegovinian", "Honduran", "Hungarian", "Icelander",
+    "Indian", "Indonesian", "Iranian", "Iraqi", "Irish", "Israeli", "Italian", "Ivorian", "Jamaican", "Japanese",
+    "Jordanian", "Kazakhstani", "Kenyan", "Kittian and Nevisian", "Kuwaiti", "Kyrgyz", "Laotian", "Latvian", "Lebanese", "Liberian",
+    "Libyan", "Liechtensteiner", "Lithuanian", "Luxembourger", "Macedonian", "Malagasy", "Malawian", "Malaysian", "Maldivan", "Malian",
+    "Maltese", "Marshallese", "Mauritanian", "Mauritian", "Mexican", "Micronesian", "Moldovan", "Monacan", "Mongolian", "Moroccan",
+    "Mosotho", "Motswana", "Mozambican", "Namibian", "Nauruan", "Nepalese", "New Zealander", "Ni-Vanuatu", "Nicaraguan", "Nigerian",
+    "Nigerien", "North Korean", "Northern Irish", "Norwegian", "Omani", "Pakistani", "Palauan", "Panamanian", "Papua New Guinean", "Paraguayan",
+    "Peruvian", "Polish", "Portuguese", "Qatari", "Romanian", "Russian", "Rwandan", "Saint Lucian", "Salvadoran", "Samoan",
+    "San Marinese", "Sao Tomean", "Saudi", "Scottish", "Senegalese", "Serbian", "Seychellois", "Sierra Leonean", "Singaporean", "Slovakian",
+    "Slovenian", "Solomon Islander", "Somali", "South African", "South Korean", "Spanish", "Sri Lankan", "Sudanese", "Surinamer", "Swazi",
+    "Swedish", "Swiss", "Syrian", "Taiwanese", "Tajik", "Tanzanian", "Thai", "Togolese", "Tongan", "Trinidadian or Tobagonian",
+    "Tunisian", "Turkish", "Tuvaluan", "Ugandan", "Ukrainian", "Uruguayan", "Uzbekistani", "Venezuelan", "Vietnamese", "Welsh",
+    "Yemenite", "Zambian", "Zimbabwean"
+  ];
+
+  // Comprehensive ethnicity options
+  const ethnicityOptions = [
+    "Afghan", "African American", "Albanian", "Algerian", "American Indian", "Arab", "Armenian", "Asian", "Australian Aboriginal",
+    "Azerbaijani", "Bangladeshi", "Basque", "Belarusian", "Bengali", "Berber", "Bosnian", "Brazilian", "Bulgarian", "Burmese",
+    "Cambodian", "Caribbean", "Catalan", "Caucasian", "Central Asian", "Cherokee", "Chinese", "Circassian", "Croatian", "Cuban",
+    "Czech", "Danish", "Dutch", "East African", "Eastern European", "Egyptian", "English", "Estonian", "Ethiopian", "European",
+    "Filipino", "Finnish", "French", "Georgian", "German", "Greek", "Gujarati", "Gypsy/Roma", "Haitian", "Han Chinese",
+    "Hispanic", "Hmong", "Hungarian", "Icelandic", "Indian", "Indigenous", "Indonesian", "Iranian", "Iraqi", "Irish",
+    "Italian", "Japanese", "Jewish", "Jordanian", "Kazakh", "Korean", "Kurdish", "Kyrgyz", "Lao", "Latin American",
+    "Latino", "Latvian", "Lebanese", "Lithuanian", "Macedonian", "Malay", "Maltese", "Maori", "Mexican", "Middle Eastern",
+    "Moldovan", "Mongolian", "Moroccan", "Native American", "Native Hawaiian", "Nepalese", "Nigerian", "Nordic", "North African", "Norwegian",
+    "Pacific Islander", "Pakistani", "Palestinian", "Persian", "Polish", "Portuguese", "Punjabi", "Romanian", "Russian", "Samoan",
+    "Scandinavian", "Scottish", "Serbian", "Sindhi", "Sinhalese", "Slavic", "Slovak", "Slovenian", "Somali", "South African",
+    "South Asian", "Southeast Asian", "Spanish", "Sri Lankan", "Sudanese", "Swedish", "Syrian", "Tajik", "Tamil",
+    "Thai", "Tibetan", "Turkish", "Turkmen", "Ukrainian", "Urdu", "Uzbek", "Vietnamese", "Welsh", "West African",
+    "White", "Yoruba", "Zulu"
+  ];
+
   const interestOptions = [
     "Board Games", "Playing Card Games", "Fashion", "Museums", "Reading", "Tropics", "Nature Lover", "Flower Lover",
     "Cat Lover", "Mountain Lover", "Sunrise Lover", "Sunset Lover", "Star Lover", 
@@ -166,7 +207,7 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
     switch (currentSection) {
       case 0: // Basic Info
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="kunya">Nickname / Kunya</Label>
@@ -253,7 +294,7 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
 
       case 1: // Location and Ethnicity
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Nationality</Label>
@@ -261,14 +302,10 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                   <SelectTrigger>
                     <SelectValue placeholder="Select nationality" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Afghan">Afghan</SelectItem>
-                    <SelectItem value="Nigerian">Nigerian</SelectItem>
-                    <SelectItem value="Pakistani">Pakistani</SelectItem>
-                    <SelectItem value="Indian">Indian</SelectItem>
-                    <SelectItem value="Bangladeshi">Bangladeshi</SelectItem>
-                    <SelectItem value="British">British</SelectItem>
-                    <SelectItem value="American">American</SelectItem>
+                  <SelectContent className="max-h-60">
+                    {nationalityOptions.map((nationality) => (
+                      <SelectItem key={nationality} value={nationality}>{nationality}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -287,38 +324,32 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Country of Residence</Label>
-                <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Afghanistan">Afghanistan</SelectItem>
-                    <SelectItem value="Nigeria">Nigeria</SelectItem>
-                    <SelectItem value="Pakistan">Pakistan</SelectItem>
-                    <SelectItem value="India">India</SelectItem>
-                    <SelectItem value="Bangladesh">Bangladesh</SelectItem>
-                    <SelectItem value="UK">United Kingdom</SelectItem>
-                    <SelectItem value="USA">United States</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Ethnicity (Select all that apply)</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {["Afghan", "Nigerian", "Pakistani", "Indian", "Bengali", "Arab", "Turkish"].map((ethnicity) => (
-                    <Badge
-                      key={ethnicity}
-                      variant={selectedEthnicity.includes(ethnicity) ? "default" : "outline"}
-                      className="cursor-pointer justify-center text-xs py-1"
-                      onClick={() => toggleEthnicity(ethnicity)}
-                    >
-                      {ethnicity}
-                    </Badge>
+            <div>
+              <Label>Country of Residence</Label>
+              <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {nationalityOptions.map((country) => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
                   ))}
-                </div>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Ethnicity (Select all that apply)</Label>
+              <div className="grid grid-cols-4 gap-2 mt-2 max-h-40 overflow-y-auto">
+                {ethnicityOptions.map((ethnicity) => (
+                  <Badge
+                    key={ethnicity}
+                    variant={selectedEthnicity.includes(ethnicity) ? "default" : "outline"}
+                    className="cursor-pointer justify-center text-xs py-1"
+                    onClick={() => toggleEthnicity(ethnicity)}
+                  >
+                    {ethnicity}
+                  </Badge>
+                ))}
               </div>
             </div>
           </div>
@@ -477,7 +508,7 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
 
       case 5: // Matching Details
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <Label>Open to matches from... (Select all that apply)</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
@@ -520,7 +551,7 @@ const ProfileEditSections = ({ user, onSave, onCancel }: ProfileEditSectionsProp
 
       case 6: // Deen
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Are you a revert?</Label>
