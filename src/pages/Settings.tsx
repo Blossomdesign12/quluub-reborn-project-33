@@ -349,15 +349,6 @@ const Settings = () => {
                         <span className="font-medium">20</span>
                       </li>
                     </ul>
-                    {isPro && (
-                      <Button 
-                        className="w-full" 
-                        variant="outline" 
-                        onClick={handleDowngrade}
-                      >
-                        Select Plan
-                      </Button>
-                    )}
                     {!isPro && (
                       <Button 
                         className="w-full" 
