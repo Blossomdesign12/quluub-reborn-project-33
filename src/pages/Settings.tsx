@@ -1,44 +1,177 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
-import { Check, CheckCircle, BadgeDollarSign, Eye, EyeOff, Mail, HelpCircle } from "lucide-react";
-import { Lock } from "@/components/Icons"; // Import Lock from our Icons component
+import { Check, CheckCircle, BadgeDollarSign, Eye, EyeOff, Mail, HelpCircle, Copy, Gift } from "lucide-react";
+import { Lock } from "@/components/Icons";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/AuthContext";
+import { userService } from "@/lib/api-client";
 
 const Settings = () => {
-  const [isPro, setIsPro] = useState(false);
+  const { user, updateUser } = useAuth();
+  const [isPro, setIsPro] = useState(user?.plan === 'premium');
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralStats, setReferralStats] = useState({
+    totalReferrals: 0,
+    activeReferrals: 0,
+    completedReferrals: 0
+  });
+  const [applyReferralCode, setApplyReferralCode] = useState("");
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
   const { toast } = useToast();
-  
-  const handleUpgrade = () => {
-    // In a real app, this would initiate a payment flow
-    setIsPro(true);
+
+  useEffect(() => {
+    fetchReferralStats();
+  }, []);
+
+  const fetchReferralStats = async () => {
+    try {
+      const response = await fetch('/api/referrals/stats', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReferralCode(data.referralCode || '');
+        setReferralStats(data.referralStats || {
+          totalReferrals: 0,
+          activeReferrals: 0,
+          completedReferrals: 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching referral stats:', error);
+    }
+  };
+
+  const generateReferralCode = async () => {
+    try {
+      const response = await fetch('/api/referrals/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReferralCode(data.referralCode);
+        toast({
+          title: "Referral code generated",
+          description: "Your referral code has been created successfully.",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating referral code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate referral code.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleApplyReferral = async () => {
+    if (!applyReferralCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a referral code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/referrals/apply', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ referralCode: applyReferralCode })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: "Referral applied",
+          description: "Referral code applied successfully!",
+        });
+        setApplyReferralCode("");
+        fetchReferralStats();
+      } else {
+        toast({
+          title: "Error",
+          description: data.message || "Failed to apply referral code.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error applying referral code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to apply referral code.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyReferralCode = () => {
+    navigator.clipboard.writeText(referralCode);
     toast({
-      title: "Plan upgraded",
-      description: "You have successfully upgraded to the Pro plan.",
+      title: "Copied!",
+      description: "Referral code copied to clipboard.",
     });
   };
 
-  const handleDowngrade = () => {
-    // In a real app, this would cancel the subscription
-    setIsPro(false);
-    toast({
-      title: "Plan downgraded",
-      description: "You have been downgraded to the Free plan.",
-    });
+  const handleUpgrade = async (priceType: 'full' | 'discount') => {
+    setIsLoadingPayment(true);
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ priceType })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        window.open(data.url, '_blank');
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create checkout session.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process payment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPayment(false);
+    }
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) {
       toast({
         title: "Error",
@@ -57,16 +190,64 @@ const Settings = () => {
       return;
     }
 
-    // In a real app, this would call an API to change the password
-    toast({
-      title: "Password changed",
-      description: "Your password has been changed successfully.",
-    });
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword
+        })
+      });
 
-    // Reset form
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+      if (response.ok) {
+        toast({
+          title: "Password changed",
+          description: "Your password has been changed successfully.",
+        });
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const data = await response.json();
+        toast({
+          title: "Error",
+          description: data.message || "Failed to change password.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change password.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleContactSupport = () => {
+    window.location.href = 'mailto:support@quluub.com';
+  };
+
+  const handleHideProfile = async () => {
+    try {
+      await userService.updateProfile(user?._id || '', { hidden: !user?.hidden });
+      updateUser({ ...user, hidden: !user?.hidden });
+      toast({
+        title: user?.hidden ? "Profile shown" : "Profile hidden",
+        description: user?.hidden ? "Your profile is now visible to others." : "Your profile is now hidden from others.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile visibility.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -86,6 +267,51 @@ const Settings = () => {
         <h1 className="text-2xl font-bold mb-6">Settings</h1>
         
         <div className="space-y-6">
+          {/* Referral System */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Gift className="h-5 w-5" />
+                Referral System
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium mb-2">Your Referral Code</h3>
+                  {referralCode ? (
+                    <div className="flex items-center gap-2">
+                      <Input value={referralCode} readOnly />
+                      <Button onClick={copyReferralCode} size="sm">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button onClick={generateReferralCode}>Generate Code</Button>
+                  )}
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Referrals: {referralStats.totalReferrals} | Active: {referralStats.activeReferrals}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-medium mb-2">Apply Referral Code</h3>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      placeholder="Enter referral code"
+                      value={applyReferralCode}
+                      onChange={(e) => setApplyReferralCode(e.target.value)}
+                    />
+                    <Button onClick={handleApplyReferral} size="sm">
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Plan Management */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -173,12 +399,22 @@ const Settings = () => {
                       </li>
                     </ul>
                     {!isPro ? (
-                      <Button 
-                        className="w-full bg-primary hover:bg-primary/90" 
-                        onClick={handleUpgrade}
-                      >
-                        Select Plan
-                      </Button>
+                      <div className="space-y-2">
+                        <Button 
+                          className="w-full bg-primary hover:bg-primary/90" 
+                          onClick={() => handleUpgrade('full')}
+                          disabled={isLoadingPayment}
+                        >
+                          {isLoadingPayment ? "Processing..." : "Select Full Price"}
+                        </Button>
+                        <Button 
+                          className="w-full bg-green-600 hover:bg-green-700" 
+                          onClick={() => handleUpgrade('discount')}
+                          disabled={isLoadingPayment}
+                        >
+                          {isLoadingPayment ? "Processing..." : "Select Discount Price"}
+                        </Button>
+                      </div>
                     ) : (
                       <Button 
                         className="w-full" 
@@ -194,6 +430,7 @@ const Settings = () => {
             </CardContent>
           </Card>
           
+          {/* Password Change */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -267,6 +504,7 @@ const Settings = () => {
             </CardContent>
           </Card>
           
+          {/* Help Center */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -278,14 +516,22 @@ const Settings = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <h3 className="font-medium mb-2">Toggle visibility</h3>
-                  <Button variant="outline" className="w-full border-red-300 text-red-500 hover:bg-red-50">
-                    Hide my profile
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-red-300 text-red-500 hover:bg-red-50"
+                    onClick={handleHideProfile}
+                  >
+                    {user?.hidden ? 'Show my profile' : 'Hide my profile'}
                   </Button>
                 </div>
                 
                 <div>
                   <h3 className="font-medium mb-2">Having any issues?</h3>
-                  <Button variant="outline" className="w-full border-blue-300 text-blue-500 hover:bg-blue-50">
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-blue-300 text-blue-500 hover:bg-blue-50"
+                    onClick={handleContactSupport}
+                  >
                     <Mail className="mr-2 h-4 w-4" />
                     Contact us
                   </Button>
