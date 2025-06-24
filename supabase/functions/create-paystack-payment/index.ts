@@ -24,6 +24,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
+    // Use the provided Paystack secret key
     const paystackSecretKey = "sk_live_92f26ac052547db6826c7f7a471c5ea72e4004b6";
 
     // Create Paystack payment
@@ -35,7 +36,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: 5000 * 100, // Amount in kobo (5000 NGN = 500000 kobo)
+        amount: 500000, // 5000 NGN in kobo
         currency: "NGN",
         callback_url: `${req.headers.get("origin")}/settings?payment=success`,
         metadata: {
@@ -47,6 +48,7 @@ serve(async (req) => {
     });
 
     const paymentData = await response.json();
+    console.log('Paystack response:', paymentData);
 
     if (!paymentData.status) {
       throw new Error(paymentData.message || "Failed to create payment");
@@ -60,6 +62,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error('Payment creation error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

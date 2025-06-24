@@ -1,14 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
+import { Link } from "react-router-dom";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
 import { chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MessageSquare, Users, Wallet, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Conversation {
   _id: string;
@@ -40,7 +40,7 @@ interface Message {
 }
 
 const Messages = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -60,13 +60,10 @@ const Messages = () => {
     const conversationId = urlParams.get('conversation');
     const matchId = urlParams.get('matchId');
     
-    console.log('URL params - conversation:', conversationId, 'matchId:', matchId);
-    
     if (conversationId) {
       setSelectedConversationId(conversationId);
       setNewConversationUser(null);
     } else if (matchId) {
-      // This is a new conversation with a match
       setSelectedConversationId(matchId);
       fetchUserForNewConversation(matchId);
     }
@@ -75,11 +72,9 @@ const Messages = () => {
   const fetchUserForNewConversation = async (userId: string) => {
     try {
       setConversationLoading(true);
-      console.log('Fetching user details for new conversation:', userId);
       const userData = await userService.getProfile(userId);
-      console.log('User data for new conversation:', userData);
       setNewConversationUser(userData);
-      setMessages([]); // Start with empty messages for new conversation
+      setMessages([]);
     } catch (error) {
       console.error("Failed to fetch user details:", error);
       toast({
@@ -98,10 +93,8 @@ const Messages = () => {
       try {
         setLoading(true);
         const data = await chatService.getConversations();
-        console.log("Conversations:", data);
         setConversations(data);
         
-        // Don't auto-select first conversation if we have a URL parameter
         const urlParams = new URLSearchParams(location.search);
         const hasUrlConversation = urlParams.get('conversation') || urlParams.get('matchId');
         
@@ -128,13 +121,10 @@ const Messages = () => {
     if (selectedConversationId && !newConversationUser) {
       const fetchMessages = async () => {
         try {
-          console.log('Fetching messages for conversation:', selectedConversationId);
           const data = await chatService.getMessages(selectedConversationId);
-          console.log("Messages:", data);
           setMessages(data);
         } catch (error) {
           console.error("Failed to fetch messages:", error);
-          // For new conversations, this is expected, so we'll start with empty messages
           if (error.response?.status === 404 || error.response?.status === 403) {
             setMessages([]);
           } else {
@@ -153,18 +143,13 @@ const Messages = () => {
   
   const handleSendMessage = async (content: string) => {
     if (!selectedConversationId || !content.trim()) {
-      console.error('Cannot send message: missing conversation ID or content');
       return;
     }
     
     try {
       setSendingMessage(true);
-      console.log('Sending message to:', selectedConversationId, 'Content:', content);
-      
       const response = await chatService.sendMessage(selectedConversationId, content);
-      console.log('Message sent successfully:', response);
       
-      // Create message object for UI
       const newMessage = {
         id: response._id,
         _id: response._id,
@@ -177,10 +162,8 @@ const Messages = () => {
         status: response.status
       };
       
-      // Update messages list with new message
       setMessages(prevMessages => [...prevMessages, newMessage]);
       
-      // If this was a new conversation, add it to conversations list
       if (newConversationUser) {
         const newConversation = {
           _id: selectedConversationId,
@@ -200,11 +183,8 @@ const Messages = () => {
         };
         setConversations(prev => [newConversation, ...prev]);
         setNewConversationUser(null);
-        
-        // Update URL to reflect the new conversation
         navigate(`/messages?conversation=${selectedConversationId}`, { replace: true });
       } else {
-        // Update existing conversation with new last message
         setConversations(prevConversations => 
           prevConversations.map(conv => 
             conv._id === selectedConversationId
@@ -234,22 +214,18 @@ const Messages = () => {
   };
   
   const handleSelectConversation = (id: string) => {
-    console.log('Selecting conversation:', id);
     setSelectedConversationId(id);
     setNewConversationUser(null);
-    
-    // Update URL to reflect selected conversation
     navigate(`/messages?conversation=${id}`, { replace: true });
   };
   
-  // Determine the contact for conversation view
   const getConversationContact = () => {
     if (selectedConversation) {
       return {
         id: selectedConversation._id,
         name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
         photoUrl: "",
-        online: Math.random() > 0.5 // Random online status for demo
+        online: Math.random() > 0.5
       };
     } else if (newConversationUser) {
       return {
@@ -264,7 +240,6 @@ const Messages = () => {
   
   const conversationContact = getConversationContact();
   
-  // Format conversation data for MessageList component
   const formattedConversations = conversations.map(conv => ({
     id: conv._id,
     name: `${conv.userDetails.fname} ${conv.userDetails.lname}`,
@@ -274,32 +249,79 @@ const Messages = () => {
     unread: conv.lastMessage.status === "UNREAD" && conv.unreadCount > 0
   }));
   
-  // Format message data for ConversationView component
   const formattedMessages = messages.map(msg => ({
     id: msg._id || msg.id,
     content: msg.message || msg.content,
     senderId: msg.senderId,
     timestamp: msg.created || msg.timestamp
   }));
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
   
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
-      <main className="container flex-1 py-6 flex flex-col">
-        <h1 className="text-2xl font-bold mb-6 text-green-700">Messages</h1>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar Navigation */}
+      <div className="w-16 bg-[#075e54] flex flex-col items-center py-4 space-y-6">
+        <div className="flex flex-col items-center space-y-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user?.profile_pic} alt={user?.fname} />
+            <AvatarFallback className="bg-white text-[#075e54] font-medium">
+              {user?.fname?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-white text-xs font-medium truncate w-full text-center">
+            {user?.fname || 'User'}
+          </span>
+        </div>
         
+        <nav className="flex flex-col space-y-4 flex-1">
+          <Link to="/dashboard">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+              <Users className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Button variant="ghost" size="icon" className="text-white bg-white/20">
+            <MessageSquare className="h-5 w-5" />
+          </Button>
+          <Link to="/wallet">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+              <Wallet className="h-5 w-5" />
+            </Button>
+          </Link>
+          <Link to="/settings">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+              <Settings className="h-5 w-5" />
+            </Button>
+          </Link>
+        </nav>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-white hover:bg-white/20" 
+          onClick={handleLogout}
+        >
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1">
         {loading ? (
-          <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+          <div className="flex items-center justify-center w-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#25d366]"></div>
           </div>
         ) : (
-          <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
+          <>
             {/* Message list sidebar */}
-            <div className={`w-full ${selectedConversationId ? 'hidden' : 'block'} md:block md:w-1/3 bg-white rounded-lg border overflow-hidden shadow-sm`}>
-              <div className="p-4 border-b bg-green-50">
-                <h2 className="font-medium text-green-800">Conversations</h2>
+            <div className={`w-full ${selectedConversationId ? 'hidden' : 'block'} md:block md:w-1/3 bg-white overflow-hidden`}>
+              <div className="p-4 bg-[#ededed] border-b">
+                <h2 className="text-lg font-medium text-gray-800">Chats</h2>
               </div>
-              <div className="overflow-y-auto h-[calc(100%-60px)]">
+              <div className="overflow-y-auto h-[calc(100vh-64px)]">
                 {conversations.length > 0 ? (
                   <MessageList 
                     conversations={formattedConversations}
@@ -307,7 +329,7 @@ const Messages = () => {
                     onSelectConversation={handleSelectConversation}
                   />
                 ) : (
-                  <div className="p-4 text-center text-muted-foreground">
+                  <div className="p-4 text-center text-gray-500">
                     {newConversationUser ? "Start your first conversation!" : "No conversations yet"}
                   </div>
                 )}
@@ -315,24 +337,24 @@ const Messages = () => {
             </div>
             
             {/* Conversation view */}
-            <div className={`${selectedConversationId ? 'block' : 'hidden'} md:block md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col shadow-sm`}>
+            <div className={`${selectedConversationId ? 'block' : 'hidden'} md:block md:w-2/3 bg-white overflow-hidden flex flex-col`}>
               {conversationLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#25d366]"></div>
                 </div>
               ) : conversationContact ? (
                 <>
                   {/* Mobile back button */}
-                  <div className="md:hidden p-4 border-b bg-green-50 flex items-center gap-3">
+                  <div className="md:hidden p-4 border-b bg-[#075e54] flex items-center gap-3">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setSelectedConversationId(null)}
-                      className="text-green-600"
+                      className="text-white"
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <span className="font-medium text-green-800">Back to conversations</span>
+                    <span className="font-medium text-white">Back to chats</span>
                   </div>
                   
                   <div className="flex-1 flex flex-col h-full">
@@ -347,18 +369,18 @@ const Messages = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full w-full">
-                  <div className="text-center text-muted-foreground">
+                <div className="flex items-center justify-center h-full w-full bg-[#e5ddd5]">
+                  <div className="text-center text-gray-500">
                     <div className="text-6xl mb-4">💬</div>
-                    <p className="text-lg font-medium">Select a conversation</p>
-                    <p className="text-sm">Choose a chat to start messaging</p>
+                    <p className="text-lg font-medium">Quluub Web</p>
+                    <p className="text-sm">Send and receive messages without keeping your phone online.</p>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </>
         )}
-      </main>
+      </div>
     </div>
   );
 };

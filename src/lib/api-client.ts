@@ -1,216 +1,153 @@
-import axios from 'axios';
-import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
-// Use environment variable or fallback to localhost
+import axios from 'axios';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-console.log('API URL:', API_URL); // Debug the API URL
-
+// Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Send cookies with requests
 });
 
-// Add token to requests if available
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Log responses for debugging
-apiClient.interceptors.response.use(
-  (response) => {
-    console.log(`API Response [${response.config.method}] ${response.config.url}:`, response.status);
-    return response;
+// Add auth token to requests
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
   },
-  (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data || error.message);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Authentication services
+// Auth service
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    try {
-      console.log('Attempting login with:', { ...credentials, password: '****' });
-      const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+  login: async (credentials: { username: string; password: string }) => {
+    const response = await apiClient.post('/auth/login', credentials);
+    return response.data;
   },
   
-  signup: async (userData: SignupData): Promise<AuthResponse> => {
-    try {
-      console.log('Attempting signup with:', { ...userData, password: '****' });
-      const response = await apiClient.post<AuthResponse>('/auth/signup', userData);
-      localStorage.setItem('token', response.data.token);
-      return response.data;
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
+  signup: async (userData: {
+    username: string;
+    email: string;
+    password: string;
+    fname: string;
+    lname: string;
+    gender: string;
+  }) => {
+    const response = await apiClient.post('/auth/signup', userData);
+    return response.data;
   },
   
-  logout: (): void => {
-    localStorage.removeItem('token');
+  getProfile: async () => {
+    const response = await apiClient.get('/auth/profile');
+    return response.data;
   },
   
-  getCurrentUser: async (): Promise<User | null> => {
-    try {
-      const response = await apiClient.get<User>('/auth/profile');
-      return response.data;
-    } catch (error) {
-      console.error('Get current user error:', error);
-      localStorage.removeItem('token');
-      return null;
-    }
-  },
-  
-  getAllUsers: async (): Promise<User[]> => {
-    try {
-      const response = await apiClient.get<User[]>('/auth/users');
-      console.log('All users:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Get all users error:', error);
-      throw error;
-    }
+  changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
+    const response = await apiClient.put('/auth/change-password', passwordData);
+    return response.data;
   }
 };
 
-// User services
+// User service
 export const userService = {
-  getProfile: async (userId: string): Promise<User> => {
-    const response = await apiClient.get<User>(`/users/${userId}`);
+  getProfile: async (userId: string) => {
+    const response = await apiClient.get(`/users/profile/${userId}`);
     return response.data;
   },
   
-  updateProfile: async (userId: string, userData: Partial<User>): Promise<User> => {
-    const response = await apiClient.put<User>(`/users/${userId}`, userData);
+  updateProfile: async (userId: string, profileData: any) => {
+    const response = await apiClient.put(`/users/${userId}`, profileData);
     return response.data;
   },
   
-  getBrowseUsers: async (params: { country?: string, nationality?: string, limit?: number, showAll?: boolean, page?: number } = {}): Promise<User[]> => {
-    // Build the query string from params
-    const queryParams = new URLSearchParams();
-    if (params.country) queryParams.append('country', params.country);
-    if (params.nationality) queryParams.append('nationality', params.nationality);
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.showAll) queryParams.append('showAll', 'true');
-    if (params.page) queryParams.append('page', params.page.toString());
-    
-    const queryString = queryParams.toString();
-    const url = `/users/browse${queryString ? `?${queryString}` : ''}`;
-    
-    console.log("Fetching users with URL:", url);
-    const response = await apiClient.get<User[]>(url);
-    console.log("API response for browse users:", response.data);
+  getBrowseUsers: async (params?: any) => {
+    const response = await apiClient.get('/users/browse', { params });
     return response.data;
   },
   
-  addToFavorites: async (userId: string): Promise<any> => {
+  upgradePlan: async (planData: { email: string; plan: string }) => {
+    const response = await apiClient.post('/users/upgrade-plan', planData);
+    return response.data;
+  },
+  
+  // Favorites
+  addToFavorites: async (userId: string) => {
     const response = await apiClient.post(`/users/favorites/${userId}`);
     return response.data;
   },
   
-  removeFromFavorites: async (userId: string): Promise<any> => {
+  removeFromFavorites: async (userId: string) => {
     const response = await apiClient.delete(`/users/favorites/${userId}`);
     return response.data;
   },
   
-  getFavorites: async (): Promise<any> => {
+  getFavorites: async () => {
     const response = await apiClient.get('/users/favorites');
     return response.data;
-  },
+  }
 };
 
-// Relationship services
+// Relationship service
 export const relationshipService = {
-  sendRequest: async (followedUserId: string): Promise<any> => {
-    console.log("Sending relationship request to:", followedUserId);
+  sendRequest: async (followedUserId: string) => {
     const response = await apiClient.post('/relationships/request', { followedUserId });
     return response.data;
   },
   
-  respondToRequest: async (relationshipId: string, status: 'rejected' | 'matched'): Promise<any> => {
-    const response = await apiClient.put(`/relationships/${relationshipId}/status`, { status });
+  respondToRequest: async (requestId: string, action: 'accept' | 'reject') => {
+    const response = await apiClient.put(`/relationships/${requestId}`, { action });
     return response.data;
   },
   
-  withdrawRequest: async (relationshipId: string): Promise<any> => {
-    const response = await apiClient.delete(`/relationships/withdraw/${relationshipId}`);
+  getReceivedRequests: async () => {
+    const response = await apiClient.get('/relationships/received');
     return response.data;
   },
   
-  getMatches: async (): Promise<any> => {
+  getSentRequests: async () => {
+    const response = await apiClient.get('/relationships/sent');
+    return response.data;
+  },
+  
+  getMatches: async () => {
     const response = await apiClient.get('/relationships/matches');
-    console.log("Matches API response:", response.data);
     return response.data;
-  },
-  
-  getPendingRequests: async (): Promise<any> => {
-    const response = await apiClient.get('/relationships/pending');
-    console.log("Pending requests API response:", response.data);
-    return response.data;
-  },
-};
-
-// Chat services
-export const chatService = {
-  getConversations: async (): Promise<any[]> => {
-    console.log('Fetching conversations...');
-    const response = await apiClient.get('/chats/conversations');
-    console.log('Conversations response:', response.data);
-    return response.data;
-  },
-  
-  getMessages: async (userId: string): Promise<any[]> => {
-    console.log('Fetching messages for user:', userId);
-    const response = await apiClient.get(`/chats/messages/${userId}`);
-    console.log('Messages response:', response.data);
-    return response.data;
-  },
-  
-  sendMessage: async (receiverId: string, message: string): Promise<any> => {
-    console.log('Sending message to:', receiverId, 'Message:', message);
-    const response = await apiClient.post('/chats/send', { receiverId, message });
-    console.log('Send message response:', response.data);
-    return response.data;
-  },
-  
-  getUnreadCount: async (): Promise<number> => {
-    const response = await apiClient.get('/chats/unread');
-    return response.data.unreadCount;
   }
 };
 
-// Payment services
+// Chat service
+export const chatService = {
+  getConversations: async () => {
+    const response = await apiClient.get('/chats/conversations');
+    return response.data;
+  },
+  
+  getMessages: async (userId: string) => {
+    const response = await apiClient.get(`/chats/messages/${userId}`);
+    return response.data;
+  },
+  
+  sendMessage: async (receiverId: string, message: string) => {
+    const response = await apiClient.post('/chats/send', { receiverId, message });
+    return response.data;
+  },
+  
+  getUnreadCount: async () => {
+    const response = await apiClient.get('/chats/unread');
+    return response.data;
+  }
+};
+
+// Payment service
 export const paymentService = {
-  createPaystackPayment: async (): Promise<{ authorization_url: string; reference: string }> => {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/functions/v1/create-paystack-payment', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to create payment');
-    }
-    
-    return response.json();
+  createPaystackPayment: async () => {
+    const response = await apiClient.post('/create-paystack-payment');
+    return response.data;
   }
 };
 

@@ -24,14 +24,14 @@ const MessageListItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-3 p-4 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors",
-        isSelected && "bg-green-50 border-green-200"
+        "flex items-center gap-3 p-3 cursor-pointer hover:bg-[#f5f5f5] transition-colors border-b border-gray-100",
+        isSelected && "bg-[#ebebeb]"
       )}
       onClick={onClick}
     >
-      <Avatar className="h-12 w-12">
+      <Avatar className="h-12 w-12 flex-shrink-0">
         <AvatarImage src={photoUrl} alt={name} />
-        <AvatarFallback className="bg-green-200 text-green-800 font-medium">
+        <AvatarFallback className="bg-gray-300 text-gray-700 font-medium">
           {name.substring(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
@@ -45,7 +45,7 @@ const MessageListItem = ({
           </span>
           <span className={cn(
             "text-xs flex-shrink-0 ml-2",
-            unread ? "text-green-600 font-medium" : "text-gray-500"
+            unread ? "text-[#25d366] font-medium" : "text-gray-500"
           )}>
             {timestamp}
           </span>
@@ -53,12 +53,12 @@ const MessageListItem = ({
         <div className="flex items-center justify-between">
           <p className={cn(
             "text-sm truncate", 
-            unread ? "text-gray-900 font-medium" : "text-gray-600"
+            unread ? "text-gray-900 font-medium" : "text-gray-500"
           )}>
             {lastMessage || "No messages yet"}
           </p>
           {unread && (
-            <span className="w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0 ml-2 font-medium">
+            <span className="w-5 h-5 rounded-full bg-[#25d366] text-white text-xs flex items-center justify-center flex-shrink-0 ml-2 font-medium">
               1
             </span>
           )}
@@ -87,7 +87,7 @@ const MessageList = ({
   onSelectConversation
 }: MessageListProps) => {
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="bg-white">
       {conversations.map((convo) => (
         <MessageListItem
           key={convo.id}

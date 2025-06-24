@@ -2,10 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-import { Send, Video, Phone } from "lucide-react";
+import { Send, Video, Phone, Smile, Mic } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import VideoCall from "./VideoCall";
-import { timeAgo } from "@/utils/dataUtils";
 
 export interface Contact {
   id: string;
@@ -74,39 +73,37 @@ const ConversationView = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
-      {/* WhatsApp-style Header */}
-      <div className="p-4 border-b flex justify-between items-center bg-green-50 shadow-sm">
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
+      {/* Header - WhatsApp Style */}
+      <div className="flex items-center justify-between p-4 bg-[#075e54] text-white shadow-sm">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
             <AvatarImage src={contact.photoUrl} alt={contact.name} />
-            <AvatarFallback className="bg-green-200">
+            <AvatarFallback className="bg-gray-300 text-gray-700">
               {contact.name.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-medium text-gray-900">{contact.name}</h3>
-            <p className="text-xs text-green-600">
+            <h3 className="font-medium">{contact.name}</h3>
+            <p className="text-xs text-gray-200">
               {contact.online ? "online" : "last seen recently"}
             </p>
           </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-green-600 hover:bg-green-100"
+            className="text-white hover:bg-white/20"
             onClick={() => {/* Voice call */}}
-            title="Voice call"
           >
             <Phone className="h-5 w-5" />
           </Button>
           <Button 
             variant="ghost" 
             size="icon"
-            className="text-green-600 hover:bg-green-100"
+            className="text-white hover:bg-white/20"
             onClick={startVideoCall}
-            title={userPlan === 'premium' ? "Start video call (5 min limit)" : "Upgrade to premium for video calls"}
             disabled={userPlan !== 'premium'}
           >
             <Video className="h-5 w-5" />
@@ -121,17 +118,17 @@ const ConversationView = ({
             userId={contact.id}
             username={contact.name}
             onEndCall={endVideoCall}
-            timeLimit={300} // 5 minutes (300 seconds)
+            timeLimit={300}
           />
         </div>
       )}
 
-      {/* WhatsApp-style Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='nonzero'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 bg-[#e5ddd5] space-y-2" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-opacity='0.03'%3E%3Cpolygon fill='%23000' points='50 0 60 40 100 50 60 60 50 100 40 60 0 50 40 40'/%3E%3C/g%3E%3C/svg%3E")`,
       }}>
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
+          <div className="flex items-center justify-center h-full text-gray-500">
             <div className="text-center">
               <div className="text-6xl mb-4">💬</div>
               <p className="text-lg font-medium">Start your conversation</p>
@@ -142,37 +139,37 @@ const ConversationView = ({
           messages.map((msg, index) => {
             const isSentByMe = msg.senderId === currentUserId;
             const showTime = index === 0 || 
-              (index > 0 && new Date(msg.timestamp).getTime() - new Date(messages[index - 1].timestamp).getTime() > 300000); // 5 minutes
+              (index > 0 && new Date(msg.timestamp).getTime() - new Date(messages[index - 1].timestamp).getTime() > 300000);
             
             return (
               <div key={msg.id} className="space-y-1">
                 {showTime && (
                   <div className="flex justify-center">
-                    <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full shadow-sm">
-                      {new Date(msg.timestamp).toLocaleString()}
+                    <span className="text-xs text-gray-500 bg-white/70 px-3 py-1 rounded-full">
+                      {new Date(msg.timestamp).toLocaleDateString()}
                     </span>
                   </div>
                 )}
-                <div
-                  className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
-                >
+                <div className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[70%] rounded-lg px-3 py-2 shadow-sm relative
-                    ${
+                    className={`max-w-[70%] rounded-lg px-3 py-2 shadow-sm relative ${
                       isSentByMe
-                        ? "bg-green-500 text-white rounded-br-none"
-                        : "bg-white border rounded-bl-none"
+                        ? "bg-[#dcf8c6] text-gray-800 rounded-br-sm"
+                        : "bg-white text-gray-800 rounded-bl-sm"
                     }`}
                   >
                     <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
-                    <span className={`text-xs block text-right mt-1 ${
-                      isSentByMe ? "text-green-100" : "text-gray-500"
-                    }`}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <span className="text-xs text-gray-500">
+                        {new Date(msg.timestamp).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </span>
+                      {isSentByMe && (
+                        <div className="text-xs text-gray-500">✓✓</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -182,27 +179,32 @@ const ConversationView = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* WhatsApp-style Message Input */}
-      <div className="border-t bg-white p-4">
-        <form onSubmit={handleSubmit} className="flex gap-3 items-end">
-          <div className="flex-1 relative">
+      {/* Message Input */}
+      <div className="p-4 bg-[#f0f0f0] border-t">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <div className="flex-1 relative bg-white rounded-full">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="Type a message..."
-              className="min-h-[48px] max-h-[120px] resize-none rounded-full border-gray-300 focus:border-green-500 focus:ring-green-500 pr-12"
+              placeholder="Type a message"
+              className="min-h-[48px] max-h-[120px] resize-none rounded-full border-none focus:ring-0 px-4 py-3 pr-20"
               disabled={sendingMessage}
               rows={1}
             />
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+              <Button type="button" variant="ghost" size="sm" className="p-1">
+                <Smile className="h-5 w-5 text-gray-500" />
+              </Button>
+            </div>
           </div>
           <Button 
             type="submit" 
             size="icon"
-            className="rounded-full bg-green-500 hover:bg-green-600 h-12 w-12 flex-shrink-0"
+            className="rounded-full bg-[#25d366] hover:bg-[#20bd5a] h-12 w-12 flex-shrink-0"
             disabled={!message.trim() || sendingMessage}
           >
-            <Send className="h-5 w-5" />
+            {message.trim() ? <Send className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </Button>
         </form>
       </div>
