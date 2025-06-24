@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { userService } from "@/lib/api-client";
+import { paymentService } from "@/lib/api-client";
 
 const Settings = () => {
   const { user, updateUser } = useAuth();
@@ -29,6 +29,7 @@ const Settings = () => {
   });
   const [applyReferralCode, setApplyReferralCode] = useState("");
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -138,36 +139,21 @@ const Settings = () => {
   };
 
   const handleUpgrade = async () => {
-    setIsLoadingPayment(true);
     try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      setIsUpgrading(true);
+      const { authorization_url } = await paymentService.createPaystackPayment();
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        window.open(data.url, '_blank');
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to create checkout session.",
-          variant: "destructive",
-        });
-      }
+      // Redirect to Paystack checkout
+      window.location.href = authorization_url;
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('Payment error:', error);
       toast({
-        title: "Error",
-        description: "Failed to process payment.",
+        title: "Payment Error",
+        description: "Failed to initiate payment. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoadingPayment(false);
+      setIsUpgrading(false);
     }
   };
 

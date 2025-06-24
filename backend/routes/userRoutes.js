@@ -1,13 +1,27 @@
-
 const express = require('express');
-const { getCurrentUser, getUserById, updateUserProfile, getBrowseUsers } = require('../controllers/userController');
+const { 
+  getUserProfile, 
+  updateUserProfile, 
+  getAllUsers, 
+  getBrowseUsers, 
+  upgradePlan,
+  addToFavorites,
+  removeFromFavorites,
+  getFavorites
+} = require('../controllers/userController');
 const { protect } = require('../middlewares/auth');
 
 const router = express.Router();
 
-router.get('/me', protect, getCurrentUser);
-router.get('/browse', protect, getBrowseUsers);
-router.get('/:id', protect, getUserById);
+router.get('/profile', protect, getUserProfile);
 router.put('/:id', protect, updateUserProfile);
+router.get('/users', protect, getAllUsers);
+router.get('/browse', protect, getBrowseUsers);
+router.post('/upgrade-plan', upgradePlan);
+
+// Favorites routes
+router.post('/favorites/:userId', protect, addToFavorites);
+router.delete('/favorites/:userId', protect, removeFromFavorites);
+router.get('/favorites', protect, getFavorites);
 
 module.exports = router;

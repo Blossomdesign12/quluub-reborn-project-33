@@ -1,7 +1,7 @@
-
 const User = require('../models/User');
-const UserActivityLog = require('../models/UserActivityLog');
-const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // @desc    Get current user
 // @route   GET /api/users/me
@@ -164,6 +164,73 @@ exports.getBrowseUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("Error in getBrowseUsers:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Add user to favorites
+// @route   POST /api/users/favorites/:userId
+// @access  Private
+exports.addToFavorites = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const favoriteUserId = req.params.userId;
+    
+    if (userId.toString() === favoriteUserId) {
+      return res.status(400).json({ message: "You cannot add yourself to favorites" });
+    }
+    
+    // Check if user exists
+    const favoriteUser = await User.findById(favoriteUserId);
+    if (!favoriteUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Add to favorites if not already there
+    const user = await User.findById(userId);
+    if (!user.favorites.includes(favoriteUserId)) {
+      user.favorites.push(favoriteUserId);
+      await user.save();
+    }
+    
+    res.json({ message: "User added to favorites", favorites: user.favorites });
+  } catch (error) {
+    console.error("Add to favorites error:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Remove user from favorites
+// @route   DELETE /api/users/favorites/:userId
+// @access  Private
+exports.removeFromFavorites = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const favoriteUserId = req.params.userId;
+    
+    const user = await User.findById(userId);
+    user.favorites = user.favorites.filter(id => id.toString() !== favoriteUserId);
+    await user.save();
+    
+    res.json({ message: "User removed from favorites", favorites: user.favorites });
+  } catch (error) {
+    console.error("Remove from favorites error:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get user's favorites
+// @route   GET /api/users/favorites
+// @access  Private
+exports.getFavorites = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    const user = await User.findById(userId).populate('favorites', '-password');
+    
+    res.json({ favorites: user.favorites || [] });
+  } catch (error) {
+    console.error("Get favorites error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

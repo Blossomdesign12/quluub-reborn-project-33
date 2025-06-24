@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User } from "@/types/user";
 import { DatabaseStats } from "@/components/DatabaseStats";
-import { Heart, User as UserIcon, ArrowRight, MessageSquare, Star } from "lucide-react";
+import { Heart, User as UserIcon, ArrowRight, MessageSquare, Star, UserCheck, UserX } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { relationshipService, chatService } from "@/lib/api-client";
+import { relationshipService, chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { calculateAge } from "@/utils/dataUtils";
 
@@ -27,30 +27,37 @@ const Dashboard = () => {
   });
   const [matchesList, setMatchesList] = useState<any[]>([]);
   const [favoritesList, setFavoritesList] = useState<any[]>([]);
+  const [receivedRequestsList, setReceivedRequestsList] = useState<any[]>([]);
+  const [sentRequestsList, setSentRequestsList] = useState<any[]>([]);
   
   // Fetch relationship stats from the backend
-  const { data: relationshipData, isLoading, error } = useQuery({
+  const { data: relationshipData, isLoading, error, refetch } = useQuery({
     queryKey: ['relationships'],
     queryFn: async () => {
       try {
         // Fetch matches data
         const matchesData = await relationshipService.getMatches();
         
-        // Fetch pending requests
+        // Fetch pending requests (received)
         const pendingData = await relationshipService.getPendingRequests();
+        
+        // Fetch favorites
+        const favoritesData = await userService.getFavorites();
         
         // Get unread messages count
         const unreadCount = await chatService.getUnreadCount();
         
         return {
           matches: matchesData?.matches?.length || 0,
-          favorites: 0, // This would need a separate endpoint for favorites
+          favorites: favoritesData?.favorites?.length || 0,
           receivedRequests: pendingData?.requests?.length || 0,
           sentRequests: 0, // This would need a separate endpoint if available
           profileViews: 0, // This would need a separate endpoint if available
           unreadMessages: unreadCount || 0,
           matchesList: matchesData?.matches || [],
-          favoritesList: [] // This would come from favorites endpoint
+          favoritesList: favoritesData?.favorites || [],
+          receivedRequestsList: pendingData?.requests || [],
+          sentRequestsList: [] // This would come from sent requests endpoint
         };
       } catch (err) {
         console.error("Failed to fetch relationship data:", err);
@@ -67,7 +74,9 @@ const Dashboard = () => {
           profileViews: 0,
           unreadMessages: 0,
           matchesList: [],
-          favoritesList: []
+          favoritesList: [],
+          receivedRequestsList: [],
+          sentRequestsList: []
         };
       }
     },
@@ -86,6 +95,8 @@ const Dashboard = () => {
       });
       setMatchesList(relationshipData.matchesList);
       setFavoritesList(relationshipData.favoritesList);
+      setReceivedRequestsList(relationshipData.receivedRequestsList);
+      setSentRequestsList(relationshipData.sentRequestsList);
     }
   }, [relationshipData]);
 
@@ -109,6 +120,40 @@ const Dashboard = () => {
     window.location.href = `/messages?conversation=${matchId}`;
   };
 
+  const handleAcceptRequest = async (relationshipId: string) => {
+    try {
+      await relationshipService.respondToRequest(relationshipId, 'matched');
+      toast({
+        title: "Request accepted",
+        description: "You can now message each other",
+      });
+      refetch(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to accept request",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectRequest = async (relationshipId: string) => {
+    try {
+      await relationshipService.respondToRequest(relationshipId, 'rejected');
+      toast({
+        title: "Request rejected",
+        description: "The request has been declined",
+      });
+      refetch(); // Refresh data
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject request",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSendRequest = (userId: string) => {
     // Send connection request
     toast({
@@ -117,13 +162,21 @@ const Dashboard = () => {
     });
   };
 
-  const handleRemoveFromFavorites = (userId: string) => {
-    // Remove from favorites
-    setFavoritesList(prev => prev.filter(fav => fav._id !== userId));
-    toast({
-      title: "Removed from favorites",
-      description: "User has been removed from your favorites",
-    });
+  const handleRemoveFromFavorites = async (userId: string) => {
+    try {
+      await userService.removeFromFavorites(userId);
+      setFavoritesList(prev => prev.filter(fav => fav._id !== userId));
+      toast({
+        title: "Removed from favorites",
+        description: "User has been removed from your favorites",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove from favorites",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderTabContent = () => {
@@ -208,14 +261,8 @@ const Dashboard = () => {
                   <div className="flex gap-2">
                     <Button 
                       size="sm" 
-                      className="flex-1"
-                      onClick={() => handleSendRequest(favorite._id)}
-                    >
-                      Send Request
-                    </Button>
-                    <Button 
-                      size="sm" 
                       variant="outline"
+                      className="flex-1"
                       onClick={() => handleRemoveFromFavorites(favorite._id)}
                     >
                       Remove
@@ -238,6 +285,70 @@ const Dashboard = () => {
             >
               Browse to add favorites
             </Button>
+          </div>
+        );
+
+      case "received":
+        return receivedRequestsList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {receivedRequestsList.map((request) => (
+              <Card key={request._id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-semibold text-primary">
+                        {request.fname?.charAt(0)}{request.lname?.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">
+                        {request.fname} {request.lname}
+                        {request.dob && `, ${calculateAge(request.dob)}`}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {request.country || "Location not specified"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleAcceptRequest(request.relationship.id)}
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Accept
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => handleRejectRequest(request.relationship.id)}
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Reject
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <UserIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg text-muted-foreground">No connection requests</p>
+          </div>
+        );
+
+      case "sent":
+        return (
+          <div className="py-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+              <UserIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg text-muted-foreground">No sent requests to display</p>
           </div>
         );
 
@@ -272,7 +383,7 @@ const Dashboard = () => {
           </Alert>
         )}
         
-        {/* Stats Overview - keep existing code */}
+        {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -324,7 +435,7 @@ const Dashboard = () => {
           </Card>
         </div>
         
-        {/* Advertisement Section - keep existing code */}
+        {/* Advertisement Section */}
         <Card className="mt-6">
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
@@ -337,7 +448,7 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         
-        {/* Updated Tabs Section */}
+        {/* Tabs Section */}
         <div className="mt-6">
           <div className="border-b">
             <div className="flex overflow-x-auto">
@@ -390,7 +501,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Feed Section - keep existing code */}
+        {/* Feed Section */}
         <div className="mt-6 bg-white rounded-lg p-4 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-medium">Feed</h3>

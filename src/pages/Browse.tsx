@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
-import { Heart, X, Send, UserPlus, Search, Filter } from "lucide-react";
+import { Heart, X, Send, UserPlus, Search, Filter, Star } from "lucide-react";
 import { userService, relationshipService } from "@/lib/api-client";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
@@ -37,6 +36,7 @@ const Browse = () => {
   const [pendingConnections, setPendingConnections] = useState<string[]>([]);
   const [countryFilter, setCountryFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [favoriteUsers, setFavoriteUsers] = useState<string[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -71,6 +71,21 @@ const Browse = () => {
     };
 
     fetchUsers();
+
+    // Fetch favorites
+    const fetchFavorites = async () => {
+      try {
+        const favoritesData = await userService.getFavorites();
+        if (favoritesData && favoritesData.favorites) {
+          const favoriteIds = favoritesData.favorites.map((fav: any) => fav._id || fav.id);
+          setFavoriteUsers(favoriteIds);
+        }
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+      }
+    };
+
+    fetchFavorites();
 
     // Fetch pending connections to highlight already requested users
     const fetchPendingRequests = async () => {
@@ -153,6 +168,39 @@ const Browse = () => {
     navigate(`/profile?id=${userId}`);
   };
 
+  const handleToggleFavorite = async (userId: string) => {
+    if (processingAction) return;
+    
+    try {
+      setProcessingAction(true);
+      
+      if (favoriteUsers.includes(userId)) {
+        await userService.removeFromFavorites(userId);
+        setFavoriteUsers(prev => prev.filter(id => id !== userId));
+        toast({
+          title: "Removed from favorites",
+          description: "User removed from your favorites",
+        });
+      } else {
+        await userService.addToFavorites(userId);
+        setFavoriteUsers(prev => [...prev, userId]);
+        toast({
+          title: "Added to favorites",
+          description: "User added to your favorites",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -231,6 +279,16 @@ const Browse = () => {
                       disabled={processingAction}
                     >
                       <X className="h-5 w-5 text-red-500" />
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 rounded-full"
+                      onClick={() => handleToggleFavorite(user._id || user.id || '')}
+                      disabled={processingAction}
+                    >
+                      <Star className={`h-5 w-5 ${favoriteUsers.includes(user._id || user.id || '') ? 'fill-yellow-500 text-yellow-500' : 'text-gray-400'}`} />
                     </Button>
                     
                     <Button

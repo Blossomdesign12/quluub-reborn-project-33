@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import type { AuthResponse, LoginCredentials, SignupData, User } from '../types/user';
 
@@ -118,6 +117,21 @@ export const userService = {
     console.log("API response for browse users:", response.data);
     return response.data;
   },
+  
+  addToFavorites: async (userId: string): Promise<any> => {
+    const response = await apiClient.post(`/users/favorites/${userId}`);
+    return response.data;
+  },
+  
+  removeFromFavorites: async (userId: string): Promise<any> => {
+    const response = await apiClient.delete(`/users/favorites/${userId}`);
+    return response.data;
+  },
+  
+  getFavorites: async (): Promise<any> => {
+    const response = await apiClient.get('/users/favorites');
+    return response.data;
+  },
 };
 
 // Relationship services
@@ -177,6 +191,26 @@ export const chatService = {
   getUnreadCount: async (): Promise<number> => {
     const response = await apiClient.get('/chats/unread');
     return response.data.unreadCount;
+  }
+};
+
+// Payment services
+export const paymentService = {
+  createPaystackPayment: async (): Promise<{ authorization_url: string; reference: string }> => {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/functions/v1/create-paystack-payment', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to create payment');
+    }
+    
+    return response.json();
   }
 };
 
