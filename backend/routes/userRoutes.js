@@ -1,3 +1,4 @@
+
 const express = require('express');
 const { 
   getUserProfile, 
@@ -13,10 +14,15 @@ const { protect } = require('../middlewares/auth');
 
 const router = express.Router();
 
+// Profile routes
 router.get('/profile', protect, getUserProfile);
 router.put('/:id', protect, updateUserProfile);
+
+// Browse routes
 router.get('/users', protect, getAllUsers);
 router.get('/browse', protect, getBrowseUsers);
+
+// Payment routes
 router.post('/upgrade-plan', upgradePlan);
 
 // Favorites routes

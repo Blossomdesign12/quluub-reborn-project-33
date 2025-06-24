@@ -1,12 +1,14 @@
+
 const User = require('../models/User');
+const UserActivityLog = require('../models/UserActivityLog');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-// @desc    Get current user
-// @route   GET /api/users/me
+// @desc    Get current user profile
+// @route   GET /api/users/profile
 // @access  Private
-exports.getCurrentUser = async (req, res) => {
+exports.getUserProfile = async (req, res) => {
   try {
     // req.user is set from the auth middleware
     const user = await User.findById(req.user._id).select('-password');
@@ -22,27 +24,13 @@ exports.getCurrentUser = async (req, res) => {
   }
 };
 
-// @desc    Get user by ID
-// @route   GET /api/users/:id
+// @desc    Get all users (for admin)
+// @route   GET /api/users/users
 // @access  Private
-exports.getUserById = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Log view activity
-    if (req.user._id.toString() !== req.params.id) {
-      await UserActivityLog.create({
-        userId: req.user._id.toString(),
-        receiverId: req.params.id,
-        action: 'VIEWED'
-      });
-    }
-    
-    res.json(user);
+    const users = await User.find().select('-password');
+    res.json(users);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -164,6 +152,28 @@ exports.getBrowseUsers = async (req, res) => {
     res.json(users);
   } catch (error) {
     console.error("Error in getBrowseUsers:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Upgrade user plan
+// @route   POST /api/users/upgrade-plan
+// @access  Public (called by webhook)
+exports.upgradePlan = async (req, res) => {
+  try {
+    const { email, plan } = req.body;
+    
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    user.plan = plan || 'premium';
+    await user.save();
+    
+    res.json({ message: 'Plan upgraded successfully' });
+  } catch (error) {
+    console.error('Upgrade plan error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
