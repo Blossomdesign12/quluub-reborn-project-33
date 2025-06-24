@@ -15,7 +15,7 @@ const VideoCallRestriction = ({ user, onStartCall }: VideoCallRestrictionProps) 
   const [callInProgress, setCallInProgress] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(5 * 60); // 5 minutes in seconds
   
-  const isPremium = user.plan === 'premium' || user.plan === 'PREMIUM';
+  const isPremium = user.plan === 'premium';
   
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -39,7 +39,7 @@ const VideoCallRestriction = ({ user, onStartCall }: VideoCallRestrictionProps) 
         if (prev <= 1) {
           clearInterval(timer);
           setCallInProgress(false);
-          return 0;
+          return 5 * 60; // Reset to 5 minutes
         }
         return prev - 1;
       });
@@ -70,7 +70,7 @@ const VideoCallRestriction = ({ user, onStartCall }: VideoCallRestrictionProps) 
               className="w-full border-amber-300 text-amber-700"
             >
               <Crown className="h-4 w-4 mr-2" />
-              Upgrade to Premium
+              Upgrade to Premium Required
             </Button>
           </div>
         </CardContent>

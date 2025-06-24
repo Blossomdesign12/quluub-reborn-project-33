@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const Settings = () => {
 
   const fetchReferralStats = async () => {
     try {
-      const response = await fetch('/api/referrals/stats', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/referrals/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -57,7 +58,7 @@ const Settings = () => {
 
   const generateReferralCode = async () => {
     try {
-      const response = await fetch('/api/referrals/generate', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/referrals/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -93,7 +94,7 @@ const Settings = () => {
     }
 
     try {
-      const response = await fetch('/api/referrals/apply', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/referrals/apply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -136,7 +137,7 @@ const Settings = () => {
     });
   };
 
-  const handleUpgrade = async (priceType: 'full' | 'discount') => {
+  const handleUpgrade = async () => {
     setIsLoadingPayment(true);
     try {
       const response = await fetch('/api/create-checkout', {
@@ -144,8 +145,7 @@ const Settings = () => {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ priceType })
+        }
       });
       
       const data = await response.json();
@@ -191,7 +191,7 @@ const Settings = () => {
     }
 
     try {
-      const response = await fetch('/api/auth/change-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/change-password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -236,7 +236,7 @@ const Settings = () => {
   const handleHideProfile = async () => {
     try {
       await userService.updateProfile(user?._id || '', { hidden: !user?.hidden });
-      updateUser({ ...user, hidden: !user?.hidden });
+      updateUser({ hidden: !user?.hidden });
       toast({
         title: user?.hidden ? "Profile shown" : "Profile hidden",
         description: user?.hidden ? "Your profile is now visible to others." : "Your profile is now hidden from others.",
@@ -370,7 +370,7 @@ const Settings = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-3xl font-bold text-center">£2<span className="text-base font-normal text-muted-foreground"> (£5)/month</span></div>
+                    <div className="text-3xl font-bold text-center">£5<span className="text-base font-normal text-muted-foreground">/month</span></div>
                     <ul className="space-y-2">
                       <li className="flex items-center justify-between">
                         <span>Requests Sent Per Month:</span>
@@ -388,24 +388,19 @@ const Settings = () => {
                         <span>Word Count Per Message:</span>
                         <span className="font-medium">20</span>
                       </li>
+                      <li className="flex items-center justify-between">
+                        <span>Video Call Access:</span>
+                        <span className="font-medium">5 min calls</span>
+                      </li>
                     </ul>
                     {!isPro ? (
-                      <div className="space-y-2">
-                        <Button 
-                          className="w-full bg-primary hover:bg-primary/90" 
-                          onClick={() => handleUpgrade('full')}
-                          disabled={isLoadingPayment}
-                        >
-                          {isLoadingPayment ? "Processing..." : "Select Full Price"}
-                        </Button>
-                        <Button 
-                          className="w-full bg-green-600 hover:bg-green-700" 
-                          onClick={() => handleUpgrade('discount')}
-                          disabled={isLoadingPayment}
-                        >
-                          {isLoadingPayment ? "Processing..." : "Select Discount Price"}
-                        </Button>
-                      </div>
+                      <Button 
+                        className="w-full bg-primary hover:bg-primary/90" 
+                        onClick={handleUpgrade}
+                        disabled={isLoadingPayment}
+                      >
+                        {isLoadingPayment ? "Processing..." : "Upgrade to Premium"}
+                      </Button>
                     ) : (
                       <Button 
                         className="w-full" 

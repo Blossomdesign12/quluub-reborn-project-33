@@ -19,15 +19,13 @@ serve(async (req) => {
   );
 
   try {
-    const { priceType } = await req.json();
-    
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripe = new Stripe("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", {
       apiVersion: "2023-10-16",
     });
 
@@ -38,17 +36,12 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    // Determine price ID based on type
-    const priceId = priceType === 'discount' 
-      ? Deno.env.get("STRIPE_PREMIUM_DISCOUNT_PRICE_ID")
-      : Deno.env.get("STRIPE_PREMIUM_FULL_PRICE_ID");
-
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: priceId,
+          price: "price_1Q5CQ7BbkcQFdkf0m8yFQyS0",
           quantity: 1,
         },
       ],

@@ -26,6 +26,7 @@ interface ConversationViewProps {
   messages: Message[];
   currentUserId: string;
   onSendMessage: (content: string) => void;
+  sendingMessage?: boolean;
 }
 
 const ConversationView = ({
@@ -33,6 +34,7 @@ const ConversationView = ({
   messages,
   currentUserId,
   onSendMessage,
+  sendingMessage = false,
 }: ConversationViewProps) => {
   const [message, setMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,7 +47,7 @@ const ConversationView = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim()) {
+    if (message.trim() && !sendingMessage) {
       onSendMessage(message.trim());
       setMessage("");
     }
@@ -59,16 +61,10 @@ const ConversationView = ({
     setIsInVideoCall(false);
   };
 
-  // Check if this is a two-person conversation (current user + contact)
-  const uniqueSenders = new Set([currentUserId, contact.id]);
-  const messageSenders = new Set(messages.map(msg => msg.senderId));
-  const isTwoPersonChat = messageSenders.size <= 2 && 
-    Array.from(messageSenders).every(senderId => uniqueSenders.has(senderId));
-
   return (
     <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="p-4 border-b flex justify-between items-center">
+      <div className="p-4 border-b flex justify-between items-center bg-white">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3">
             <AvatarImage src={contact.photoUrl} alt={contact.name} />
@@ -107,60 +103,64 @@ const ConversationView = ({
       )}
 
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
-          const isSentByMe = msg.senderId === currentUserId;
-          return (
-            <div
-              key={msg.id}
-              className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
-            >
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const isSentByMe = msg.senderId === currentUserId;
+            return (
               <div
-                className={`max-w-[70%] rounded-lg p-3 
-                ${
-                  isSentByMe
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
+                key={msg.id}
+                className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
               >
-                <p className="text-sm break-words">{msg.content}</p>
-                <span className="text-xs opacity-70 block text-right mt-1">
-                  {timeAgo(msg.timestamp)}
-                </span>
+                <div
+                  className={`max-w-[70%] rounded-lg p-3 
+                  ${
+                    isSentByMe
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-white border"
+                  }`}
+                >
+                  <p className="text-sm break-words">{msg.content}</p>
+                  <span className="text-xs opacity-70 block text-right mt-1">
+                    {timeAgo(msg.timestamp)}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input - Only show for two-person conversations */}
-      {isTwoPersonChat && (
-        <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2">
+      {/* Message Input */}
+      <div className="border-t bg-white p-4">
+        <form onSubmit={handleSubmit} className="flex gap-2">
           <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type a message..."
-            className="min-h-[45px] resize-none"
+            className="min-h-[45px] max-h-[120px] resize-none flex-1"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 handleSubmit(e);
               }
             }}
+            disabled={sendingMessage}
           />
-          <Button type="submit" size="icon">
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={!message.trim() || sendingMessage}
+          >
             <Send className="h-5 w-5" />
           </Button>
         </form>
-      )}
-      
-      {/* Show message when input is disabled */}
-      {!isTwoPersonChat && messages.length > 0 && (
-        <div className="border-t p-4 text-center text-muted-foreground text-sm">
-          Message input is only available for private conversations between two users
-        </div>
-      )}
+      </div>
     </div>
   );
 };

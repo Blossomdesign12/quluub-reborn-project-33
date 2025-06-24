@@ -6,7 +6,7 @@ import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
 import VideoCallRestriction from "@/components/VideoCallRestriction";
 import { chatService, userService } from "@/lib/api-client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface Conversation {
@@ -171,7 +171,7 @@ const Messages = () => {
         message: response.message,
         senderId: response.senderId,
         receiverId: response.receiverId,
-        timestamp: 'Just now',
+        timestamp: new Date().toISOString(),
         created: response.created,
         status: response.status
       };
@@ -332,6 +332,7 @@ const Messages = () => {
                       messages={formattedMessages}
                       currentUserId={user?._id || ""}
                       onSendMessage={handleSendMessage}
+                      sendingMessage={sendingMessage}
                     />
                   </div>
                   
@@ -375,6 +376,7 @@ const Messages = () => {
                     messages={formattedMessages}
                     currentUserId={user?._id || ""}
                     onSendMessage={handleSendMessage}
+                    sendingMessage={sendingMessage}
                   />
                 </div>
                 

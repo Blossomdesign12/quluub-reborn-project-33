@@ -13,7 +13,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  const stripe = new Stripe("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", {
     apiVersion: "2023-10-16",
   });
 
@@ -38,14 +38,20 @@ serve(async (req) => {
       const userEmail = session.metadata?.user_email;
       
       if (userEmail) {
-        // Update user plan to premium
-        const { error } = await supabaseClient
-          .from("users")
-          .update({ plan: "premium" })
-          .eq("email", userEmail);
-          
-        if (error) {
-          console.error("Error updating user plan:", error);
+        // Update user plan to premium in your backend
+        const response = await fetch(`${Deno.env.get("BACKEND_URL")}/api/users/upgrade-plan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            email: userEmail,
+            plan: 'premium'
+          })
+        });
+        
+        if (!response.ok) {
+          console.error("Error updating user plan in backend");
         }
       }
     }
