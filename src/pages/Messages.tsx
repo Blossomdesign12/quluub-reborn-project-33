@@ -4,10 +4,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import MessageList from "@/components/MessageList";
 import ConversationView from "@/components/ConversationView";
-import VideoCallRestriction from "@/components/VideoCallRestriction";
 import { chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Conversation {
   _id: string;
@@ -220,11 +221,6 @@ const Messages = () => {
         );
       }
       
-      toast({
-        title: "Message sent",
-        description: "Your message has been sent successfully",
-      });
-      
     } catch (error) {
       console.error("Failed to send message:", error);
       toast({
@@ -253,14 +249,14 @@ const Messages = () => {
         id: selectedConversation._id,
         name: `${selectedConversation.userDetails.fname} ${selectedConversation.userDetails.lname}`,
         photoUrl: "",
-        online: false
+        online: Math.random() > 0.5 // Random online status for demo
       };
     } else if (newConversationUser) {
       return {
         id: selectedConversationId!,
         name: `${newConversationUser.fname} ${newConversationUser.lname}`,
         photoUrl: "",
-        online: false
+        online: true
       };
     }
     return null;
@@ -283,25 +279,25 @@ const Messages = () => {
     id: msg._id || msg.id,
     content: msg.message || msg.content,
     senderId: msg.senderId,
-    timestamp: formatTimestamp(msg.created || msg.timestamp)
+    timestamp: msg.created || msg.timestamp
   }));
   
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
       <main className="container flex-1 py-6 flex flex-col">
-        <h1 className="text-2xl font-bold mb-6">Messages</h1>
+        <h1 className="text-2xl font-bold mb-6 text-green-700">Messages</h1>
         
         {loading ? (
           <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
           </div>
         ) : (
           <div className="flex flex-1 gap-6 h-[calc(100vh-200px)]">
             {/* Message list sidebar */}
-            <div className="w-full md:w-1/3 bg-white rounded-lg border overflow-hidden">
-              <div className="p-4 border-b">
-                <h2 className="font-medium">Conversations</h2>
+            <div className={`w-full ${selectedConversationId ? 'hidden' : 'block'} md:block md:w-1/3 bg-white rounded-lg border overflow-hidden shadow-sm`}>
+              <div className="p-4 border-b bg-green-50">
+                <h2 className="font-medium text-green-800">Conversations</h2>
               </div>
               <div className="overflow-y-auto h-[calc(100%-60px)]">
                 {conversations.length > 0 ? (
@@ -319,81 +315,47 @@ const Messages = () => {
             </div>
             
             {/* Conversation view */}
-            <div className="hidden md:flex md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col">
+            <div className={`${selectedConversationId ? 'block' : 'hidden'} md:block md:w-2/3 bg-white rounded-lg border overflow-hidden flex-col shadow-sm`}>
               {conversationLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
                 </div>
               ) : conversationContact ? (
                 <>
-                  <div className="flex-1">
+                  {/* Mobile back button */}
+                  <div className="md:hidden p-4 border-b bg-green-50 flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedConversationId(null)}
+                      className="text-green-600"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <span className="font-medium text-green-800">Back to conversations</span>
+                  </div>
+                  
+                  <div className="flex-1 flex flex-col h-full">
                     <ConversationView
                       contact={conversationContact}
                       messages={formattedMessages}
                       currentUserId={user?._id || ""}
                       onSendMessage={handleSendMessage}
                       sendingMessage={sendingMessage}
-                    />
-                  </div>
-                  
-                  {/* Video Call Section */}
-                  <div className="border-t p-4">
-                    <VideoCallRestriction 
-                      user={user!}
-                      onStartCall={() => {
-                        toast({
-                          title: "Video Call Started",
-                          description: "You have 5 minutes for this call",
-                        });
-                      }}
+                      userPlan={user?.plan || 'free'}
                     />
                   </div>
                 </>
               ) : (
                 <div className="flex items-center justify-center h-full w-full">
-                  <p className="text-muted-foreground">
-                    Select a conversation to start chatting
-                  </p>
+                  <div className="text-center text-muted-foreground">
+                    <div className="text-6xl mb-4">💬</div>
+                    <p className="text-lg font-medium">Select a conversation</p>
+                    <p className="text-sm">Choose a chat to start messaging</p>
+                  </div>
                 </div>
               )}
             </div>
-            
-            {/* Mobile view - show conversation when selected */}
-            {selectedConversationId && conversationContact && (
-              <div className="md:hidden fixed inset-0 bg-white z-50 flex flex-col">
-                <div className="p-4 border-b flex items-center gap-4">
-                  <button 
-                    onClick={() => setSelectedConversationId(null)}
-                    className="text-primary"
-                  >
-                    ← Back
-                  </button>
-                  <h2 className="font-medium">{conversationContact.name}</h2>
-                </div>
-                <div className="flex-1">
-                  <ConversationView
-                    contact={conversationContact}
-                    messages={formattedMessages}
-                    currentUserId={user?._id || ""}
-                    onSendMessage={handleSendMessage}
-                    sendingMessage={sendingMessage}
-                  />
-                </div>
-                
-                {/* Mobile Video Call Section */}
-                <div className="border-t p-4">
-                  <VideoCallRestriction 
-                    user={user!}
-                    onStartCall={() => {
-                      toast({
-                        title: "Video Call Started",
-                        description: "You have 5 minutes for this call",
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         )}
       </main>
@@ -410,7 +372,9 @@ const formatTimestamp = (timestamp: string): string => {
   const diffInMs = now.getTime() - date.getTime();
   const diffInHours = diffInMs / (1000 * 60 * 60);
   
-  if (diffInHours < 24) {
+  if (diffInHours < 1) {
+    return 'now';
+  } else if (diffInHours < 24) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   } else if (diffInHours < 48) {
     return 'Yesterday';

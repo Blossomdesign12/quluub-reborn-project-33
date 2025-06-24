@@ -2,14 +2,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-interface Message {
-  id: string;
-  senderId: string;
-  content: string;
-  timestamp: string;
-  isRead: boolean;
-}
-
 interface MessageListItemProps {
   name: string;
   photoUrl: string;
@@ -32,30 +24,46 @@ const MessageListItem = ({
   return (
     <div 
       className={cn(
-        "flex items-center gap-3 p-3 rounded-md cursor-pointer",
-        isSelected ? "bg-primary/10" : "hover:bg-muted/50"
+        "flex items-center gap-3 p-4 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors",
+        isSelected && "bg-green-50 border-green-200"
       )}
       onClick={onClick}
     >
-      <Avatar>
+      <Avatar className="h-12 w-12">
         <AvatarImage src={photoUrl} alt={name} />
-        <AvatarFallback>{name.substring(0, 2).toUpperCase()}</AvatarFallback>
+        <AvatarFallback className="bg-green-200 text-green-800 font-medium">
+          {name.substring(0, 2).toUpperCase()}
+        </AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between">
-          <span className={cn("font-medium", unread && "font-semibold")}>{name}</span>
-          <span className="text-xs text-muted-foreground">{timestamp}</span>
+        <div className="flex justify-between items-baseline mb-1">
+          <span className={cn(
+            "font-medium text-gray-900 truncate", 
+            unread && "font-semibold"
+          )}>
+            {name}
+          </span>
+          <span className={cn(
+            "text-xs flex-shrink-0 ml-2",
+            unread ? "text-green-600 font-medium" : "text-gray-500"
+          )}>
+            {timestamp}
+          </span>
         </div>
-        <p className={cn(
-          "text-sm truncate", 
-          unread ? "text-foreground font-medium" : "text-muted-foreground"
-        )}>
-          {lastMessage}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className={cn(
+            "text-sm truncate", 
+            unread ? "text-gray-900 font-medium" : "text-gray-600"
+          )}>
+            {lastMessage || "No messages yet"}
+          </p>
+          {unread && (
+            <span className="w-5 h-5 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0 ml-2 font-medium">
+              1
+            </span>
+          )}
+        </div>
       </div>
-      {unread && (
-        <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-      )}
     </div>
   );
 };
@@ -79,7 +87,7 @@ const MessageList = ({
   onSelectConversation
 }: MessageListProps) => {
   return (
-    <div className="space-y-1">
+    <div className="divide-y divide-gray-100">
       {conversations.map((convo) => (
         <MessageListItem
           key={convo.id}

@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, Star, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Heart, X, Star, User, MessageSquare } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 interface MatchCardProps {
   name: string;
@@ -24,6 +24,8 @@ interface MatchCardProps {
   onFavorite?: () => void;
   onSendRequest?: () => void;
   onChat?: () => void;
+  isFavorited?: boolean;
+  isMatched?: boolean;
 }
 
 const MatchCard = ({ 
@@ -43,13 +45,14 @@ const MatchCard = ({
   onMessage,
   onFavorite,
   onSendRequest,
-  onChat
+  onChat,
+  isFavorited = false,
+  isMatched = false
 }: MatchCardProps) => {
-  const [isFavorited, setIsFavorited] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  const navigate = useNavigate();
 
   const handleFavorite = () => {
-    setIsFavorited(!isFavorited);
     onFavorite?.();
   };
 
@@ -63,7 +66,11 @@ const MatchCard = ({
   };
 
   const handleChat = () => {
-    onChat?.();
+    if (isMatched) {
+      navigate(`/messages?matchId=${userId}`);
+    } else {
+      onChat?.();
+    }
   };
 
   if (isHidden) return null;
@@ -92,6 +99,12 @@ const MatchCard = ({
         {matchDate && (
           <div className="absolute top-2 left-2 bg-white/90 px-2 py-1 rounded-full">
             <span className="text-xs font-medium text-primary">{matchDate}</span>
+          </div>
+        )}
+
+        {isFavorited && (
+          <div className="absolute top-2 left-2 bg-yellow-500/90 px-2 py-1 rounded-full">
+            <Star className="h-3 w-3 text-white fill-current" />
           </div>
         )}
       </div>
@@ -134,7 +147,7 @@ const MatchCard = ({
             </Button>
           )}
           
-          {onSendRequest && (
+          {onSendRequest && !isMatched && (
             <Button
               size="sm"
               onClick={handleSendRequest}
@@ -145,13 +158,13 @@ const MatchCard = ({
             </Button>
           )}
 
-          {onChat && (
+          {isMatched && (
             <Button
               size="sm"
               onClick={handleChat}
-              className="flex-1"
+              className="flex-1 bg-green-500 hover:bg-green-600"
             >
-              <Heart className="h-4 w-4 mr-1" />
+              <MessageSquare className="h-4 w-4 mr-1" />
               Message
             </Button>
           )}

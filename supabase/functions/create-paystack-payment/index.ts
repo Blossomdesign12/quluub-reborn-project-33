@@ -24,7 +24,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const paystackSecretKey = Deno.env.get("PAYSTACK_SECRET_KEY") || "sk_live_92f26ac052547db6826c7f7a471c5ea72e4004b6";
+    const paystackSecretKey = "sk_live_92f26ac052547db6826c7f7a471c5ea72e4004b6";
 
     // Create Paystack payment
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
