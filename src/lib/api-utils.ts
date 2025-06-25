@@ -65,13 +65,13 @@ export const useRespondToConnectionRequest = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async ({ relationshipId, status }: { relationshipId: string, status: 'matched' | 'rejected' }) => {
-      return await relationshipService.respondToRequest(relationshipId, status);
+    mutationFn: async ({ relationshipId, action }: { relationshipId: string, action: 'accept' | 'reject' }) => {
+      return await relationshipService.respondToRequest(relationshipId, action);
     },
     onSuccess: (_, variables) => {
       toast({
-        title: variables.status === 'matched' ? "Connection accepted" : "Connection declined",
-        description: variables.status === 'matched' 
+        title: variables.action === 'accept' ? "Connection accepted" : "Connection declined",
+        description: variables.action === 'accept' 
           ? "You can now chat with this person" 
           : "The connection request has been declined",
       });

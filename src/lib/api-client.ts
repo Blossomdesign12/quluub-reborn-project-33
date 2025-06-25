@@ -27,6 +27,9 @@ apiClient.interceptors.request.use(
 export const authService = {
   login: async (credentials: { username: string; password: string }) => {
     const response = await apiClient.post('/auth/login', credentials);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
     return response.data;
   },
   
@@ -39,12 +42,24 @@ export const authService = {
     gender: string;
   }) => {
     const response = await apiClient.post('/auth/signup', userData);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
+  },
+  
+  getCurrentUser: async () => {
+    const response = await apiClient.get('/auth/profile');
     return response.data;
   },
   
   getProfile: async () => {
     const response = await apiClient.get('/auth/profile');
     return response.data;
+  },
+  
+  logout: () => {
+    localStorage.removeItem('token');
   },
   
   changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
@@ -100,12 +115,19 @@ export const relationshipService = {
   },
   
   respondToRequest: async (requestId: string, action: 'accept' | 'reject') => {
-    const response = await apiClient.put(`/relationships/${requestId}`, { action });
+    // Map frontend actions to backend status values
+    const status = action === 'accept' ? 'matched' : 'rejected';
+    const response = await apiClient.put(`/relationships/${requestId}/status`, { status });
     return response.data;
   },
   
   getReceivedRequests: async () => {
-    const response = await apiClient.get('/relationships/received');
+    const response = await apiClient.get('/relationships/pending');
+    return response.data;
+  },
+  
+  getPendingRequests: async () => {
+    const response = await apiClient.get('/relationships/pending');
     return response.data;
   },
   
