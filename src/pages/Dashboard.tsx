@@ -122,7 +122,7 @@ const Dashboard = () => {
 
   const handleAcceptRequest = async (relationshipId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'matched');
+      await relationshipService.respondToRequest(relationshipId, 'accept');
       toast({
         title: "Request accepted",
         description: "You can now message each other",
@@ -139,7 +139,7 @@ const Dashboard = () => {
 
   const handleRejectRequest = async (relationshipId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'rejected');
+      await relationshipService.respondToRequest(relationshipId, 'reject');
       toast({
         title: "Request rejected",
         description: "The request has been declined",

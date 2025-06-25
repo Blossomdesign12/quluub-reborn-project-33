@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,7 +83,7 @@ const NotificationBell = ({ onNotificationsRead }: NotificationBellProps) => {
 
   const handleAccept = async (relationshipId: string, userId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'matched');
+      await relationshipService.respondToRequest(relationshipId, 'accept');
       toast({
         title: "Connection Accepted",
         description: "You can now message each other",
@@ -103,7 +102,7 @@ const NotificationBell = ({ onNotificationsRead }: NotificationBellProps) => {
 
   const handleReject = async (relationshipId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'rejected');
+      await relationshipService.respondToRequest(relationshipId, 'reject');
       toast({
         title: "Connection Declined",
         description: "The request has been declined",

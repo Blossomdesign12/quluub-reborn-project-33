@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,7 +102,7 @@ const Alerts = () => {
 
   const handleAcceptRequest = async (relationshipId: string, userId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'matched');
+      await relationshipService.respondToRequest(relationshipId, 'accept');
       
       // Remove from connection requests
       setConnectionRequests(prev => 
@@ -145,7 +144,7 @@ const Alerts = () => {
 
   const handleDeclineRequest = async (relationshipId: string) => {
     try {
-      await relationshipService.respondToRequest(relationshipId, 'rejected');
+      await relationshipService.respondToRequest(relationshipId, 'reject');
       
       // Remove from connection requests
       setConnectionRequests(prev => 
