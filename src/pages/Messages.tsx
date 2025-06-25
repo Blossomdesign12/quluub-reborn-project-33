@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import MessageList from "@/components/MessageList";
-import ConversationView from "@/components/ConversationView";
+import MaterialChatInterface from "@/components/MaterialChatInterface";
 import { chatService, userService } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,30 +28,17 @@ interface Conversation {
   unreadCount: number;
 }
 
-interface Message {
-  id: string;
-  _id: string;
-  content: string;
-  message: string;
-  senderId: string;
-  receiverId: string;
-  timestamp: string;
-  created: string;
-  status: string;
-}
-
 const Messages = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sendingMessage, setSendingMessage] = useState(false);
   const [newConversationUser, setNewConversationUser] = useState<any>(null);
   const [conversationLoading, setConversationLoading] = useState(false);
+  const [chatCount, setChatCount] = useState(0);
   
   const selectedConversation = conversations.find(c => c._id === selectedConversationId);
   
@@ -59,6 +47,7 @@ const Messages = () => {
     const urlParams = new URLSearchParams(location.search);
     const conversationId = urlParams.get('conversation');
     const matchId = urlParams.get('matchId');
+    const userId = urlParams.get('userId');
     
     if (conversationId) {
       setSelectedConversationId(conversationId);
@@ -66,6 +55,9 @@ const Messages = () => {
     } else if (matchId) {
       setSelectedConversationId(matchId);
       fetchUserForNewConversation(matchId);
+    } else if (userId) {
+      setSelectedConversationId(userId);
+      fetchUserForNewConversation(userId);
     }
   }, [location.search]);
   
@@ -74,7 +66,6 @@ const Messages = () => {
       setConversationLoading(true);
       const userData = await userService.getProfile(userId);
       setNewConversationUser(userData);
-      setMessages([]);
     } catch (error) {
       console.error("Failed to fetch user details:", error);
       toast({
@@ -96,7 +87,7 @@ const Messages = () => {
         setConversations(data);
         
         const urlParams = new URLSearchParams(location.search);
-        const hasUrlConversation = urlParams.get('conversation') || urlParams.get('matchId');
+        const hasUrlConversation = urlParams.get('conversation') || urlParams.get('matchId') || urlParams.get('userId');
         
         if (data.length > 0 && !selectedConversationId && !hasUrlConversation) {
           setSelectedConversationId(data[0]._id);
@@ -115,103 +106,6 @@ const Messages = () => {
     
     fetchConversations();
   }, []);
-  
-  // Fetch messages when conversation selected
-  useEffect(() => {
-    if (selectedConversationId && !newConversationUser) {
-      const fetchMessages = async () => {
-        try {
-          const data = await chatService.getMessages(selectedConversationId);
-          setMessages(data);
-        } catch (error) {
-          console.error("Failed to fetch messages:", error);
-          if (error.response?.status === 404 || error.response?.status === 403) {
-            setMessages([]);
-          } else {
-            toast({
-              title: "Error",
-              description: "Failed to load messages",
-              variant: "destructive",
-            });
-          }
-        }
-      };
-      
-      fetchMessages();
-    }
-  }, [selectedConversationId, newConversationUser, toast]);
-  
-  const handleSendMessage = async (content: string) => {
-    if (!selectedConversationId || !content.trim()) {
-      return;
-    }
-    
-    try {
-      setSendingMessage(true);
-      const response = await chatService.sendMessage(selectedConversationId, content);
-      
-      const newMessage = {
-        id: response._id,
-        _id: response._id,
-        content: response.message,
-        message: response.message,
-        senderId: response.senderId,
-        receiverId: response.receiverId,
-        timestamp: new Date().toISOString(),
-        created: response.created,
-        status: response.status
-      };
-      
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      
-      if (newConversationUser) {
-        const newConversation = {
-          _id: selectedConversationId,
-          lastMessage: {
-            message: content,
-            created: new Date().toISOString(),
-            status: 'SENT'
-          },
-          userDetails: {
-            username: newConversationUser.username,
-            fname: newConversationUser.fname,
-            lname: newConversationUser.lname,
-            gender: newConversationUser.gender,
-            country: newConversationUser.country
-          },
-          unreadCount: 0
-        };
-        setConversations(prev => [newConversation, ...prev]);
-        setNewConversationUser(null);
-        navigate(`/messages?conversation=${selectedConversationId}`, { replace: true });
-      } else {
-        setConversations(prevConversations => 
-          prevConversations.map(conv => 
-            conv._id === selectedConversationId
-              ? {
-                  ...conv,
-                  lastMessage: {
-                    ...conv.lastMessage,
-                    message: content,
-                    created: new Date().toISOString()
-                  }
-                }
-              : conv
-          )
-        );
-      }
-      
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSendingMessage(false);
-    }
-  };
   
   const handleSelectConversation = (id: string) => {
     setSelectedConversationId(id);
@@ -247,13 +141,6 @@ const Messages = () => {
     lastMessage: conv.lastMessage.message,
     timestamp: formatTimestamp(conv.lastMessage.created),
     unread: conv.lastMessage.status === "UNREAD" && conv.unreadCount > 0
-  }));
-  
-  const formattedMessages = messages.map(msg => ({
-    id: msg._id || msg.id,
-    content: msg.message || msg.content,
-    senderId: msg.senderId,
-    timestamp: msg.created || msg.timestamp
   }));
 
   const handleLogout = () => {
@@ -320,6 +207,9 @@ const Messages = () => {
             <div className={`w-full ${selectedConversationId ? 'hidden' : 'block'} md:block md:w-1/3 bg-white overflow-hidden`}>
               <div className="p-4 bg-[#ededed] border-b">
                 <h2 className="text-lg font-medium text-gray-800">Chats</h2>
+                {chatCount > 0 && (
+                  <p className="text-sm text-gray-600">Messages remaining: {chatCount}</p>
+                )}
               </div>
               <div className="overflow-y-auto h-[calc(100vh-64px)]">
                 {conversations.length > 0 ? (
@@ -357,15 +247,13 @@ const Messages = () => {
                     <span className="font-medium text-white">Back to chats</span>
                   </div>
                   
-                  <div className="flex-1 flex flex-col h-full">
-                    <ConversationView
-                      contact={conversationContact}
-                      messages={formattedMessages}
-                      currentUserId={user?._id || ""}
-                      onSendMessage={handleSendMessage}
-                      sendingMessage={sendingMessage}
-                      userPlan={user?.plan || 'free'}
-                    />
+                  {/* Chat header */}
+                  <div className="p-4 border-b bg-[#f0f0f0]">
+                    <h3 className="font-medium text-gray-800">{conversationContact.name}</h3>
+                  </div>
+                  
+                  <div className="flex-1 flex flex-col h-full p-4">
+                    <MaterialChatInterface setChatCount={setChatCount} />
                   </div>
                 </>
               ) : (

@@ -92,16 +92,19 @@ export const userService = {
   
   // Favorites
   addToFavorites: async (userId: string) => {
+    console.log(`API: Adding user ${userId} to favorites`);
     const response = await apiClient.post(`/users/favorites/${userId}`);
     return response.data;
   },
   
   removeFromFavorites: async (userId: string) => {
+    console.log(`API: Removing user ${userId} from favorites`);
     const response = await apiClient.delete(`/users/favorites/${userId}`);
     return response.data;
   },
   
   getFavorites: async () => {
+    console.log('API: Getting user favorites');
     const response = await apiClient.get('/users/favorites');
     return response.data;
   }
@@ -142,7 +145,7 @@ export const relationshipService = {
   }
 };
 
-// Chat service
+// Chat service  
 export const chatService = {
   getConversations: async () => {
     const response = await apiClient.get('/chats/conversations');
@@ -162,12 +165,29 @@ export const chatService = {
   getUnreadCount: async () => {
     const response = await apiClient.get('/chats/unread');
     return response.data;
+  },
+
+  // Legacy chat endpoints for compatibility
+  getChat: async (userId: string) => {
+    const response = await apiClient.get(`/chats/chat?userId=${userId}`);
+    return response.data;
+  },
+
+  addChat: async (userId: string, message: string) => {
+    const response = await apiClient.post('/chats/chat', { userId, message });
+    return response.data;
+  },
+
+  updateChat: async (ids: string[]) => {
+    const response = await apiClient.put('/chats/chat', { ids });
+    return response.data;
   }
 };
 
 // Payment service
 export const paymentService = {
   createPaystackPayment: async () => {
+    console.log('API: Creating Paystack payment');
     const response = await apiClient.post('/payments/create-paystack-payment');
     return response.data;
   }

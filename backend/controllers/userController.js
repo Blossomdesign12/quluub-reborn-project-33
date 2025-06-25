@@ -91,7 +91,7 @@ exports.updateUserProfile = async (req, res) => {
       hidden: updatedUser.hidden,
       kunya: updatedUser.kunya,
       dob: updatedUser.dob,
-      ethnicity: updatedUser.ethnicity,
+      ethnicity: updatedUser.ethnicity,  
       profile_pic: updatedUser.profile_pic
     });
   } catch (error) {
@@ -186,6 +186,8 @@ exports.addToFavorites = async (req, res) => {
     const userId = req.user._id;
     const favoriteUserId = req.params.userId;
     
+    console.log(`Adding user ${favoriteUserId} to favorites for user ${userId}`);
+    
     if (userId.toString() === favoriteUserId) {
       return res.status(400).json({ message: "You cannot add yourself to favorites" });
     }
@@ -198,9 +200,14 @@ exports.addToFavorites = async (req, res) => {
     
     // Add to favorites if not already there
     const user = await User.findById(userId);
+    if (!user.favorites) {
+      user.favorites = [];
+    }
+    
     if (!user.favorites.includes(favoriteUserId)) {
       user.favorites.push(favoriteUserId);
       await user.save();
+      console.log(`Successfully added to favorites. New favorites array:`, user.favorites);
     }
     
     res.json({ message: "User added to favorites", favorites: user.favorites });
@@ -218,9 +225,17 @@ exports.removeFromFavorites = async (req, res) => {
     const userId = req.user._id;
     const favoriteUserId = req.params.userId;
     
+    console.log(`Removing user ${favoriteUserId} from favorites for user ${userId}`);
+    
     const user = await User.findById(userId);
+    if (!user.favorites) {
+      user.favorites = [];
+    }
+    
     user.favorites = user.favorites.filter(id => id.toString() !== favoriteUserId);
     await user.save();
+    
+    console.log(`Successfully removed from favorites. New favorites array:`, user.favorites);
     
     res.json({ message: "User removed from favorites", favorites: user.favorites });
   } catch (error) {
@@ -236,7 +251,11 @@ exports.getFavorites = async (req, res) => {
   try {
     const userId = req.user._id;
     
+    console.log(`Getting favorites for user ${userId}`);
+    
     const user = await User.findById(userId).populate('favorites', '-password');
+    
+    console.log(`Found ${user.favorites?.length || 0} favorites`);
     
     res.json({ favorites: user.favorites || [] });
   } catch (error) {

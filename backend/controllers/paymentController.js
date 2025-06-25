@@ -24,7 +24,7 @@ exports.createPaystackPayment = async (req, res) => {
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_API_KEY}`,
+        'Authorization': `Bearer sk_live_92f26ac052547db6826c7f7a471c5ea72e4004b6`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(paystackData)
