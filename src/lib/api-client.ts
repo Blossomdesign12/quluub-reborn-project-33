@@ -1,6 +1,5 @@
 
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -23,11 +22,6 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
-// Initialize Supabase client for edge functions
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
 
 // Auth service
 export const authService = {
@@ -161,7 +155,7 @@ export const chatService = {
   },
   
   sendMessage: async (receiverId: string, message: string) => {
-    const response = await apiClient.post('/chats/send', { receiverId, message });
+    const response = await apiClient.post('/chats/send', { userId: receiverId, message });
     return response.data;
   },
   
@@ -174,26 +168,8 @@ export const chatService = {
 // Payment service
 export const paymentService = {
   createPaystackPayment: async () => {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized. Please check your environment variables.');
-    }
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('User not authenticated');
-    }
-
-    const { data, error } = await supabase.functions.invoke('create-paystack-payment', {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
+    const response = await apiClient.post('/payments/create-paystack-payment');
+    return response.data;
   }
 };
 

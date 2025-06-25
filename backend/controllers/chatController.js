@@ -1,7 +1,29 @@
+
+const { v4: uuidv4 } = require("uuid");
 const Chat = require('../models/Chat');
 const User = require('../models/User');
 const Relationship = require('../models/Relationship');
-const mongoose = require('mongoose');
+const WaliChat = require('../models/WaliChat');
+
+// Helper functions
+const plans = {
+  freemium: {
+    messageAllowance: 10,
+    wordCountPerMessage: 20
+  },
+  premium: {
+    messageAllowance: 50,
+    wordCountPerMessage: 100
+  }
+};
+
+const findUser = async (userId) => {
+  return await User.findById(userId);
+};
+
+const capitalizeFirstLetter = (string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
 
 // Helper function to check if two users are matched
 const areUsersMatched = async (userId1, userId2) => {
@@ -14,10 +36,79 @@ const areUsersMatched = async (userId1, userId2) => {
   return !!relationship;
 };
 
-// @desc    Get conversations for a user
-// @route   GET /api/chats/conversations
-// @access  Private
-exports.getConversations = async (req, res) => {
+// GET CHAT BETWEEN TWO USERS
+const getChat = async (req, res) => {
+  const userInfo = req.user;
+  const { userId } = req.query;
+
+  try {
+    // Check if users are matched before allowing to see messages
+    const isMatched = await areUsersMatched(userInfo._id.toString(), userId);
+    if (!isMatched) {
+      return res.status(403).json({ message: 'You can only chat with matched connections' });
+    }
+
+    const contactUser = await findUser(userId);
+    const currentUser = await findUser(userInfo._id);
+
+    const chats = await Chat.find({
+      $or: [
+        { senderId: userInfo._id, receiverId: userId },
+        { senderId: userId, receiverId: userInfo._id },
+      ],
+    }).sort("created");
+
+    const returnData = chats.map((item) => ({
+      sender: item.senderId.equals(userInfo._id)
+        ? currentUser.username
+        : contactUser.username,
+      receiver: item.receiverId.equals(userInfo._id)
+        ? currentUser.username
+        : contactUser.username,
+      message: item.message,
+      timestamp: item.created,
+      id: item._id,
+      status: item.status,
+    }));
+
+    return res.json(returnData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// GET ALL RECEIVED CHATS
+const getAllChatReceived = async (req, res) => {
+  const userInfo = req.user;
+  
+  try {
+    const currentUser = await findUser(userInfo._id);
+    const chats = await Chat.find({ receiverId: userInfo._id }).sort("created");
+
+    const returnData = await Promise.all(
+      chats.map(async (item) => {
+        const sender = await findUser(item.senderId);
+        return {
+          sender: sender.username,
+          receiver: currentUser.username,
+          message: item.message,
+          timestamp: item.created,
+          id: item._id,
+          status: item.status,
+        };
+      })
+    );
+
+    return res.json(returnData);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// GET CONVERSATIONS
+const getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
     
@@ -32,7 +123,7 @@ exports.getConversations = async (req, res) => {
         }
       },
       {
-        $sort: { created: -1 } // Sort by latest message
+        $sort: { created: -1 }
       },
       {
         $group: {
@@ -99,19 +190,11 @@ exports.getConversations = async (req, res) => {
   }
 };
 
-// @desc    Get messages between two users
-// @route   GET /api/chats/messages/:userId
-// @access  Private
-exports.getMessages = async (req, res) => {
+// GET MESSAGES
+const getMessages = async (req, res) => {
   try {
     const currentUserId = req.user._id;
     const otherUserId = req.params.userId;
-    
-    // Validate other user exists
-    const otherUser = await User.findById(otherUserId);
-    if (!otherUser) {
-      return res.status(404).json({ message: 'User not found' });
-    }
     
     // Check if users are matched before allowing to see messages
     const isMatched = await areUsersMatched(currentUserId.toString(), otherUserId);
@@ -146,45 +229,93 @@ exports.getMessages = async (req, res) => {
   }
 };
 
-// @desc    Send a message
-// @route   POST /api/chats/send
-// @access  Private
-exports.sendMessage = async (req, res) => {
+// COUNT SENT MESSAGES FOR VALIDATION
+const getChatCountForValidation = async (userId, userInfo) => {
+  const count = await Chat.countDocuments({
+    senderId: userInfo._id,
+    receiverId: userId,
+  });
+  return count;
+};
+
+// ADD CHAT / SEND MESSAGE
+const addChat = async (req, res) => {
+  const userInfo = req.user;
+  const { userId, message } = req.body;
+  
   try {
-    const { receiverId, message } = req.body;
-    const senderId = req.user._id;
-    
-    // Validate receiver exists
-    const receiver = await User.findById(receiverId);
-    if (!receiver) {
-      return res.status(404).json({ message: 'Receiver not found' });
-    }
-    
     // Check if users are matched before allowing to send messages
-    const isMatched = await areUsersMatched(senderId.toString(), receiverId);
+    const isMatched = await areUsersMatched(userInfo._id.toString(), userId);
     if (!isMatched) {
       return res.status(403).json({ message: 'You can only message matched connections' });
     }
-    
-    // Create new message
-    const newMessage = await Chat.create({
-      senderId,
-      receiverId,
-      message,
+
+    const contact = await findUser(userId);
+    const currentUser = await findUser(userInfo._id);
+
+    const {
+      messageAllowance,
+      wordCountPerMessage,
+    } = plans?.[currentUser.plan] || plans.freemium;
+
+    const sentCount = await getChatCountForValidation(contact._id, userInfo);
+
+    if (
+      sentCount >= messageAllowance ||
+      message.split(" ").length >= wordCountPerMessage
+    ) {
+      return res.status(422).json({ msg: `plan exceeded` });
+    }
+
+    if (currentUser.gender === "female") {
+      if (!currentUser.waliDetails) {
+        return res.status(422).json({ msg: `wali details required to chat` });
+      }
+
+      const waliEmail = JSON.parse(currentUser.waliDetails)?.email;
+      if (!waliEmail) {
+        return res.status(422).json({ msg: `wali email required to chat` });
+      }
+    }
+
+    const chat = new Chat({
+      senderId: userInfo._id,
+      receiverId: contact._id,
+      message: message,
       status: "UNREAD"
     });
-    
-    res.status(201).json(newMessage);
+    await chat.save();
+
+    return res.status(201).json(chat);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// @desc    Get unread message count
-// @route   GET /api/chats/unread
-// @access  Private
-exports.getUnreadCount = async (req, res) => {
+// UPDATE CHAT STATUS
+const updateChat = async (req, res) => {
+  const { ids } = req.body;
+
+  try {
+    if (!Array.isArray(ids) || ids.length < 1) {
+      return res.json("Empty list");
+    }
+
+    await Chat.updateMany(
+      { _id: { $in: ids } },
+      { $set: { status: "READ" } }
+    );
+
+    return res.json("Updated successfully");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// GET UNREAD COUNT
+const getUnreadCount = async (req, res) => {
   try {
     const userId = req.user._id;
     
@@ -207,4 +338,18 @@ exports.getUnreadCount = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
+};
+
+// SEND MESSAGE (for API compatibility)
+const sendMessage = addChat;
+
+module.exports = {
+  getChat,
+  getAllChatReceived,
+  getConversations,
+  getMessages,
+  addChat,
+  sendMessage,
+  updateChat,
+  getUnreadCount
 };
