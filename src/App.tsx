@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard";
 import Search from "./pages/Search";
 import Matches from "./pages/Matches";
 import Settings from "./pages/Settings";
+import VideoCall from "./pages/VideoCall";
+
 import Alerts from "./pages/Alerts";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -40,6 +42,8 @@ const App = () => (
             <Route path="/matches" element={<PrivateRoute element={<Matches />} />} />
             <Route path="/settings" element={<PrivateRoute element={<Settings />} />} />
             <Route path="/alerts" element={<PrivateRoute element={<Alerts />} />} />
+            <Route path="/video-call" element={<PrivateRoute element={<VideoCall />} />} />
+
             <Route path="/admin" element={<PrivateRoute element={<AdminDashboard />} />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

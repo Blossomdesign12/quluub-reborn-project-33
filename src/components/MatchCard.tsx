@@ -136,15 +136,26 @@ const MatchCard = ({
 
         <div className="flex gap-2">
           {onFavorite && (
-            <Button
-              size="sm"
-              variant={isFavorited ? "default" : "outline"}
-              onClick={handleFavorite}
-              className="flex-1"
-            >
-              <Star className={`h-4 w-4 mr-1 ${isFavorited ? 'fill-current' : ''}`} />
-              {isFavorited ? 'Favorited' : 'Favorite'}
-            </Button>
+          <Button
+          size="sm"
+          onClick={handleFavorite}
+          variant="ghost"                    // strip out green defaults
+          className={`flex-1 ${
+            isFavorited
+              ? "!bg-yellow-500 !text-white !hover:bg-yellow-600"
+              : "border border-gray-300 text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          <Star
+            className={`h-4 w-4 mr-1 ${
+              isFavorited ? "!text-white fill-current" : "text-yellow-500"
+            }`}
+          />
+          {isFavorited ? "Favorited" : "Favorite"}
+        </Button>
+        
+        
+        
           )}
           
           {onSendRequest && !isMatched && (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -16,6 +16,8 @@ import Navbar from "@/components/Navbar";
 import MatchCard from "@/components/MatchCard";
 import { useBrowseUsers } from "@/hooks/useBrowseUsers";
 import { relationshipService } from "@/lib/api-client";
+import { userService } from "@/lib/api-client"; // ensure this is imported
+
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
 import { useNavigate } from "react-router-dom";
@@ -134,13 +136,56 @@ const Search = () => {
     }
   };
 
-  const handleAddToFavorites = (userId: string) => {
-    setFavorites(prev => [...prev, userId]);
-    toast({
-      title: "Added to Favorites",
-      description: "User has been added to your favorites.",
-    });
+  const handleAddToFavorites = async (userId: string) => {
+    try {
+      await userService.addToFavorites(userId); // <-- use this
+      setFavorites(prev => [...prev, userId]);
+      toast({
+        title: "Added to Favorites",
+        description: "User has been added to your favorites.",
+      });
+    } catch (error) {
+      console.error("Failed to add to favorites:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add user to favorites.",
+        variant: "destructive",
+      });
+    }
   };
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const data = await userService.getFavorites();
+        const favoriteIds = data.favorites.map((user: User) => user._id);
+        setFavorites(favoriteIds);
+      } catch (err) {
+        console.error("Error fetching favorites", err);
+      }
+    };
+  
+    fetchFavorites();
+  }, []);
+  
+
+  const handleRemoveFromFavorites = async (userId: string) => {
+    try {
+      await userService.removeFromFavorites(userId);
+      setFavorites(prev => prev.filter(id => id !== userId));
+      toast({
+        title: "Removed from Favorites",
+        description: "User has been removed from your favorites.",
+      });
+    } catch (error) {
+      console.error("Failed to remove from favorites:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove user from favorites.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   
   const handlePass = (userId: string) => {
     toast({
@@ -401,19 +446,25 @@ const Search = () => {
                   
                   return (
                     <MatchCard 
-                      key={user._id}
-                      name={`${user.fname} ${user.lname}`}
-                      username={user.username}
-                      age={age}
-                      location={user.country || "Location not specified"}
-                      summary={user.summary}
-                      matchPercentage={Math.floor(Math.random() * 30) + 70}
-                      tags={extractTags(user)}
-                      userId={user._id}
-                      onFavorite={() => handleAddToFavorites(user._id!)}
-                      onSendRequest={() => handleSendRequest(user._id!)}
-                      onPass={() => handlePass(user._id!)}
-                    />
+                    key={user._id}
+                    name={`${user.fname} ${user.lname}`}
+                    username={user.username}
+                    age={age}
+                    location={user.country || "Location not specified"}
+                    summary={user.summary}
+                    matchPercentage={Math.floor(Math.random() * 30) + 70}
+                    tags={extractTags(user)}
+                    userId={user._id}
+                    isFavorite={favorites.includes(user._id!)} // <- added line
+                    onFavorite={() =>
+                      favorites.includes(user._id!)
+                        ? handleRemoveFromFavorites(user._id!)
+                        : handleAddToFavorites(user._id!)
+                    }
+                    onSendRequest={() => handleSendRequest(user._id!)}
+                    onPass={() => handlePass(user._id!)}
+                  />
+                  
                   );
                 })}
               </div>
